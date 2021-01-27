@@ -1,5 +1,5 @@
 [Build Status of Main Branch](https://dev.azure.com/DFS2-C29/DFSII/_build/latest?definitionId=13&branchName=main)
-# Directed Focus Study Title 
+# Rahul's Awesome Black Screen Directed Focus Study
 Paragraph which gives a high level overview of the software from a developers
 perspective.
 ## Unique Features
