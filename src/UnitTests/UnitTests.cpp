@@ -31,7 +31,7 @@ namespace UnitTests
 			Vec2 B( 3.f , 4.f );
 			Assert::AreEqual( B.GetLength() , 5.f , L"They match" );
 
-			Assert::AreEqual( RoundDownToInt( A.GetAngleDegrees() ) , 37 , L"They match" );
+			Assert::AreEqual( RoundDownToInt( A.GetAngleDegrees() ) , 36 , L"They match" );
 			Assert::AreEqual( RoundDownToInt( B.GetAngleDegrees() ) , 53 , L"They match" );
 		}
 		
