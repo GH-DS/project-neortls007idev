@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include "Engine/Core/Rgba8.hpp"
+#include "Engine/Math/MathUtils.hpp"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -21,5 +22,18 @@ namespace UnitTests
 			testColor = BLUE;
 			Assert::AreEqual( testColor == BLUE , true , L"They match" );
 		}
+
+		TEST_METHOD( VectorLength )
+		{
+			Vec2 A( 8.f , 6.f );
+			Assert::AreEqual( A.GetLength() , 10.f , L"They match" );
+
+			Vec2 B( 3.f , 4.f );
+			Assert::AreEqual( B.GetLength() , 5.f , L"They match" );
+
+			Assert::AreEqual( RoundDownToInt( A.GetAngleDegrees() ) , 37 , L"They match" );
+			Assert::AreEqual( RoundDownToInt( B.GetAngleDegrees() ) , 53 , L"They match" );
+		}
+		
 	};
 }
