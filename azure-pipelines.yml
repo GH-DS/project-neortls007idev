@@ -5,6 +5,7 @@
 
 trigger:
 - main
+- Docs
 - Setup
 - Sprint01
 - Sprint02
