@@ -36,8 +36,6 @@ For the purposes of this Directed Focus Study the major goal is to setup the Dir
 20. **_STRETCH_: -** Setting up the DirectX Raytracing (DXR) pipeline
 20. **_STRETCH_: -** Testing the Raytracing pipeline with a single oriented cube on a plane
 
-_**NOTE: -**_ 
-
 ---
 
 ### Minor Features - 
