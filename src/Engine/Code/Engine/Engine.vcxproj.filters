@@ -532,6 +532,9 @@
     <ClCompile Include="RendererDX12\RenderContextDX12.cpp">
       <Filter>RendererDX12</Filter>
     </ClCompile>
+    <ClCompile Include="Profilling\D3D12PerformanceMarker.cpp">
+      <Filter>Profilling</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Rgba8.hpp">
@@ -995,6 +998,9 @@
     </ClInclude>
     <ClInclude Include="RendererDX12\RenderContextDX12.hpp">
       <Filter>RendererDX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Profilling\D3D12PerformanceMarker.hpp">
+      <Filter>Profilling</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

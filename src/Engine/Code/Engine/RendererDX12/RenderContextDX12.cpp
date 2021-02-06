@@ -27,6 +27,8 @@
 #include <d3d12sdklayers.h>
 #include <dxgidebug.h>
 
+#define DX_SAFE_RELEASE( ptr ) if ( nullptr != ptr ) { ptr->Release(); ptr = nullptr; }
+
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //				D3D12 specific includes and Macros
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -68,13 +70,13 @@ void RenderContextDX12::Startup( Window* window )
 	CreateDebugModule();
 #endif
 
-	IDXGISwapChain* swapchain = nullptr;  // Create Swap Chain
+//	IDXGISwapChain* swapchain = nullptr;  // Create Swap Chain
 
 	UINT flags = 0; /*D3D12_CREATE_DEVICE_SINGLETHREADED;*/
 #if defined(RENDER_DEBUG) && defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
 	flags |= D3D12_CREATE_DEVICE_DEBUG;
 #endif
-
+/*
 	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 	memset( &swapChainDesc , 0 , sizeof( swapChainDesc ) );
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
@@ -97,7 +99,7 @@ void RenderContextDX12::Startup( Window* window )
 	// save data as member variable when window is created.
 
 	// create
-
+*/
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
