@@ -1,5 +1,5 @@
 ﻿#include "Engine/Renderer/IndexBuffer.hpp"
-#include "Engine/Renderer/D3D11Common.hpp"
+#include "Engine/Renderer/D3DCommon.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 

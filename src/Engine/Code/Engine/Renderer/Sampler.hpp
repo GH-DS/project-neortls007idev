@@ -4,7 +4,7 @@
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-struct ID3D11SamplerState;
+struct ID3D12SamplerState;
 class RenderContext;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -15,11 +15,11 @@ public:
 	Sampler( RenderContext* ctx , eSamplerType type , eCompareOp comparisonOp = COMPARE_NEVER );
 	~Sampler();
 
-	inline ID3D11SamplerState*	GetHandle() const					{ return m_handle;  }
+	inline ID3D12SamplerState*	GetHandle() const					{ return m_handle;  }
 	inline eSamplerType			GetType() const						{ return m_type; }
 public:
 	RenderContext*		m_owner;
-	ID3D11SamplerState* m_handle;
+	ID3D12SamplerState* m_handle;
 	eSamplerType		m_type;			// DEBUG INFO 
 
 private:

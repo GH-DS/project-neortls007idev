@@ -5,7 +5,7 @@
 #include "Engine/Primitives/AABB3.hpp"
 #include "Engine/Primitives/Polygon2D.hpp"
 #include "Engine/Renderer/Camera.hpp"
-#include "Engine/Renderer/D3D11Utils.hpp"
+#include "Engine/Renderer/D3DUtils.hpp"
 
 #include <vector>
 

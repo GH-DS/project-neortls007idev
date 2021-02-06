@@ -34,7 +34,7 @@ void ImGUISystem::Startup()
 	ImPlot::CreateContext();
 	//ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplWin32_Init( m_theWindow->m_hwnd );
-	ImGui_ImplDX11_Init( m_renderContext->m_device , m_renderContext->m_context );
+//	ImGui_ImplDX12_Init( m_renderContext->m_device , m_renderContext->m_context );
 	ImGui::StyleColorsDark();
 }
 

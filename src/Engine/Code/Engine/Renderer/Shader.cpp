@@ -1,5 +1,5 @@
 #include "Engine/Renderer/Shader.hpp"
-#include "Engine/Renderer/D3D11Common.hpp"
+#include "Engine/Renderer/D3DCommon.hpp"
 #include "Engine/Renderer/RenderContext.hpp"
 #include "Engine/Core/FileUtils.hpp"
 #include <d3dcompiler.h>
@@ -15,31 +15,31 @@
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void ConvertBufferAttributeToID3DX11Attribute( D3D11_INPUT_ELEMENT_DESC* d3d11VertxDescription, buffer_attribute_t const* attribute )
+void ConvertBufferAttributeToID3DX11Attribute( D3D12_INPUT_ELEMENT_DESC* D3D12VertxDescription, buffer_attribute_t const* attribute )
 {
 	for ( int index = 0; attribute[ index ].type != BUFFER_FORMAT_INVALID; index++ )
 	{
-		d3d11VertxDescription[ index ].SemanticName			= attribute[ index ].name.c_str();
-		d3d11VertxDescription[ index ].SemanticIndex		= 0;													// Array element
+		D3D12VertxDescription[ index ].SemanticName			= attribute[ index ].name.c_str();
+		D3D12VertxDescription[ index ].SemanticIndex		= 0;													// Array element
 		switch ( attribute[index].type )
 		{
 			case BUFFER_FORMAT_INVALID			: ERROR_AND_DIE( "INVALID FORMAT" );
 												  break;
-			case BUFFER_FORMAT_VEC2				: d3d11VertxDescription[ index ].Format = DXGI_FORMAT_R32G32_FLOAT;
+			case BUFFER_FORMAT_VEC2				: D3D12VertxDescription[ index ].Format = DXGI_FORMAT_R32G32_FLOAT;
 												  break;
-			case BUFFER_FORMAT_VEC3				: d3d11VertxDescription[ index ].Format = DXGI_FORMAT_R32G32B32_FLOAT; 
+			case BUFFER_FORMAT_VEC3				: D3D12VertxDescription[ index ].Format = DXGI_FORMAT_R32G32B32_FLOAT; 
 												  break;
-			case  BUFFER_FORMAT_VEC4			: d3d11VertxDescription[ index ].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case  BUFFER_FORMAT_VEC4			: D3D12VertxDescription[ index ].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 												  break;
-			case BUFFER_FORMAT_R8G8B8A8_UNORM	: d3d11VertxDescription[ index ].Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			case BUFFER_FORMAT_R8G8B8A8_UNORM	: D3D12VertxDescription[ index ].Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 												  break;
 		default:
 			break;
 		}
-		d3d11VertxDescription[ index ].InputSlot			= 0;													// interlaced or parallel IA format
-		d3d11VertxDescription[ index ].AlignedByteOffset	= attribute[ index ].offset;
-		d3d11VertxDescription[ index ].InputSlotClass		= D3D11_INPUT_PER_VERTEX_DATA;							// Vertex data = drawing a tree, Instance data = drawing a million tree
-		d3d11VertxDescription[ index ].InstanceDataStepRate = 0;
+		D3D12VertxDescription[ index ].InputSlot			= 0;													// interlaced or parallel IA format
+		D3D12VertxDescription[ index ].AlignedByteOffset	= attribute[ index ].offset;
+		D3D12VertxDescription[ index ].InputSlotClass		= D3D12_INPUT_PER_VERTEX_DATA;							// Vertex data = drawing a tree, Instance data = drawing a million tree
+		D3D12VertxDescription[ index ].InstanceDataStepRate = 0;
 	}
 }
 
@@ -150,7 +150,7 @@ bool ShaderStage::Compile( RenderContext* ctx , std::string const& filename , vo
 	}
 		else
 		{
-			ID3D11Device*	device = ctx->m_device;
+			ID3D12Device*	device = ctx->m_device;
 			void const*		byteCodePtr = byteCode->GetBufferPointer();
 			size_t			byteCodeSize = byteCode->GetBufferSize();
 
@@ -319,7 +319,7 @@ bool Shader::RecompileShader( std::string const& filename )
 
 //--------------------------------------------------------------------------------------------------------------------------------------------              
 
-ID3D11InputLayout* Shader::GetOrCreateInputLayout( buffer_attribute_t const* attribs )
+ID3D12InputLayout* Shader::GetOrCreateInputLayout( buffer_attribute_t const* attribs )
 {
 	if ( m_inputLayout != nullptr )
 	{
@@ -335,8 +335,8 @@ ID3D11InputLayout* Shader::GetOrCreateInputLayout( buffer_attribute_t const* att
 		attribsCopy++;
 	}
 	
-	//D3D11_INPUT_ELEMENT_DESC vertexDescription[ 3 ];
-	D3D11_INPUT_ELEMENT_DESC* vertexDescription = new D3D11_INPUT_ELEMENT_DESC[ count ];
+	//D3D12_INPUT_ELEMENT_DESC vertexDescription[ 3 ];
+	D3D12_INPUT_ELEMENT_DESC* vertexDescription = new D3D12_INPUT_ELEMENT_DESC[ count ];
 
 	if ( m_lastBufferAttribute != attribs )
 	{
@@ -344,7 +344,7 @@ ID3D11InputLayout* Shader::GetOrCreateInputLayout( buffer_attribute_t const* att
 		m_lastBufferAttribute = attribs;
 	}
 
-	ID3D11Device* device = m_owner->m_device;
+	ID3D12Device* device = m_owner->m_device;
 	device->CreateInputLayout(
 		&vertexDescription[0] , count ,
 		m_vertexStage.GetByteCode() , m_vertexStage.GetByteCodeLength() ,

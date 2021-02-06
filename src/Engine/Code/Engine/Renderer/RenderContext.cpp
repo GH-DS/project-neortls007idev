@@ -31,23 +31,23 @@
 #include <shobjidl.h>
 #include <shobjidl_core.h>
 
-#include <d3d11sdklayers.h>
+#include <d3d12sdklayers.h>
 #include <dxgidebug.h>
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-//				D3D11 specific includes and Macros
+//				D3D12 specific includes and Macros
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 #include "Engine/Math/MatrixUtils.hpp"
-#include "Engine/Renderer/D3D11Common.hpp"
+#include "Engine/Renderer/D3DCommon.hpp"
 #include "Engine/Renderer/Shader.hpp"
 #include "Engine/Renderer/ShaderState.hpp"
 #include "Engine/Renderer/Material.hpp"
 #include "Engine/Renderer/Sampler.hpp"
 #include "Engine/Primitives/GPUMesh.hpp"
-#include "Engine/Profilling/D3D11PerformanceMarker.hpp"
+#include "Engine/Profilling/D3D12PerformanceMarker.hpp"
 
-#pragma comment( lib, "d3d11.lib" )         // needed a01
+#pragma comment( lib, "D3D12.lib" )         // needed a01
 #pragma comment( lib, "dxgi.lib" )          // needed a01
 #pragma comment( lib, "d3dcompiler.lib" )   // needed when we get to shaders
 
@@ -60,7 +60,7 @@ extern	char const*				g_errorShaderCode;
 //				PROFILING D3D POINTER FOR THE SPECIFIC CONFIGURATIONS
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-extern	D3D11PerformanceMarker* g_D3D11PerfMarker;
+extern	D3D12PerformanceMarker* g_D3D12PerfMarker;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -198,8 +198,8 @@ RenderContext::~RenderContext()
 	DX_SAFE_RELEASE( m_context );
 	DX_SAFE_RELEASE( m_device );
 
-	delete g_D3D11PerfMarker;
-	g_D3D11PerfMarker = nullptr;
+	delete g_D3D12PerfMarker;
+	g_D3D12PerfMarker = nullptr;
 	
 	ReportLiveObjects();    // do our leak reporting just before shutdown to give us a better detailed list;
 	DestroyDebugModule();
@@ -210,18 +210,15 @@ RenderContext::~RenderContext()
 
 void RenderContext::Startup( Window* window )
 {
-	// ID3D11Device
-	// ID3D11DeviceContext
-	
 #if defined(RENDER_DEBUG) && defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
 	CreateDebugModule();
 #endif
 
 	IDXGISwapChain* swapchain = nullptr;  // Create Swap Chain
 
-	UINT flags = 0; /*D3D11_CREATE_DEVICE_SINGLETHREADED;*/
+	UINT flags = 0; /*D3D12_CREATE_DEVICE_SINGLETHREADED;*/
 #if defined(RENDER_DEBUG) && defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
-	flags |= D3D11_CREATE_DEVICE_DEBUG;
+	flags |= D3D12_CREATE_DEVICE_DEBUG;
 #endif
 
 	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
@@ -246,13 +243,13 @@ void RenderContext::Startup( Window* window )
 	// save data as member variable when window is created.
 
 	// create
-	HRESULT result = D3D11CreateDeviceAndSwapChain( nullptr ,
+	HRESULT result = D3D12CreateDeviceAndSwapChain( nullptr ,
 		D3D_DRIVER_TYPE_HARDWARE ,
 		nullptr ,
 		flags ,// Controls the type of device we make
 		nullptr ,
 		0 ,
-		D3D11_SDK_VERSION ,
+		D3D12_SDK_VERSION ,
 		&swapChainDesc ,
 		&swapchain ,
 		&m_device ,
@@ -270,7 +267,7 @@ void RenderContext::Startup( Window* window )
 	m_swapChain = new SwapChain( this , swapchain );
 
 	//std::string debugName = "RenderContext Resource";
-	g_D3D11PerfMarker = new D3D11PerformanceMarker( this );
+	g_D3D12PerfMarker = new D3D12PerformanceMarker( this );
 //#if defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
 //#endif
 	/*Shader::s_errorShader->CreateFromString( this , g_errorShaderCode );*/
@@ -352,7 +349,7 @@ void RenderContext::ClearScreen( const Rgba8& clearColor )
 	Texture* backbuffer = m_swapChain->GetBackBuffer();
 	TextureView* backbuffer_rtv = backbuffer->GetOrCreateRenderTargetView();
 
-	ID3D11RenderTargetView* rtv = backbuffer_rtv->GetRTVHandle();
+	ID3D12RenderTargetView* rtv = backbuffer_rtv->GetRTVHandle();
 	m_context->ClearRenderTargetView( rtv , clearFloats );
 }
 
@@ -361,8 +358,8 @@ void RenderContext::ClearScreen( const Rgba8& clearColor )
 void RenderContext::ClearDepth( Texture* depthStencilTexture , float depth )
 {
 	TextureView* view = depthStencilTexture->GetOrCreateDepthStencilView();
-	ID3D11DepthStencilView* dsv = view->GetDSVHandle();
-	m_context->ClearDepthStencilView( dsv , D3D11_CLEAR_DEPTH , depth , 0 );
+	ID3D12DepthStencilView* dsv = view->GetDSVHandle();
+	m_context->ClearDepthStencilView( dsv , D3D12_CLEAR_DEPTH , depth , 0 );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -377,7 +374,7 @@ void RenderContext::SetDepthTest( eCompareOp compare , bool writeOnPass )
 		DX_SAFE_RELEASE( m_currentDepthStencilState );
 	}
 	
-	D3D11_DEPTH_STENCIL_DESC dsDesc;
+	D3D12_DEPTH_STENCIL_DESC dsDesc;
 
 	/*
 	  memset(&dsDesc , sizeof(dsDesc) , 0 );							// set everything to 0; 
@@ -388,8 +385,8 @@ void RenderContext::SetDepthTest( eCompareOp compare , bool writeOnPass )
 	*/
 	// Depth test parameters
 	dsDesc.DepthEnable = true;
-	dsDesc.DepthWriteMask = GetD3D11DepthWriteMask( writeOnPass );
-	dsDesc.DepthFunc = GetD3D11ComparisonFunc( compare );
+	dsDesc.DepthWriteMask = GetD3D12DepthWriteMask( writeOnPass );
+	dsDesc.DepthFunc = GetD3D12ComparisonFunc( compare );
 
 	// Stencil test parameters
 	dsDesc.StencilEnable = true;
@@ -397,16 +394,16 @@ void RenderContext::SetDepthTest( eCompareOp compare , bool writeOnPass )
 	dsDesc.StencilWriteMask = 0xFF;
 
 	// Stencil operations if pixel is front-facing
-	dsDesc.FrontFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	dsDesc.FrontFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.FrontFace.StencilFunc		= D3D11_COMPARISON_ALWAYS;
+	dsDesc.FrontFace.StencilFailOp		= D3D12_STENCIL_OP_KEEP;
+	dsDesc.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_INCR;
+	dsDesc.FrontFace.StencilPassOp		= D3D12_STENCIL_OP_KEEP;
+	dsDesc.FrontFace.StencilFunc		= D3D12_COMPARISON_ALWAYS;
 
 	// Stencil operations if pixel is back-facing
-	dsDesc.BackFace.StencilFailOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.BackFace.StencilDepthFailOp	= D3D11_STENCIL_OP_DECR;
-	dsDesc.BackFace.StencilPassOp		= D3D11_STENCIL_OP_KEEP;
-	dsDesc.BackFace.StencilFunc			= D3D11_COMPARISON_ALWAYS;
+	dsDesc.BackFace.StencilFailOp		= D3D12_STENCIL_OP_KEEP;
+	dsDesc.BackFace.StencilDepthFailOp	= D3D12_STENCIL_OP_DECR;
+	dsDesc.BackFace.StencilPassOp		= D3D12_STENCIL_OP_KEEP;
+	dsDesc.BackFace.StencilFunc			= D3D12_COMPARISON_ALWAYS;
 
 	// Create depth stencil state
 	
@@ -419,7 +416,7 @@ void RenderContext::SetDepthTest( eCompareOp compare , bool writeOnPass )
 
 Texture* RenderContext::CreateRenderTarget( IntVec2 texelSize , D3D_DXGI_FORMAT format , std::string debugRenderTargetName )
 {
-	D3D11_TEXTURE2D_DESC desc;
+	D3D12_TEXTURE2D_DESC desc;
 	desc.Width						= texelSize.x;
 	desc.Height						= texelSize.y;
 	desc.MipLevels					= 1;
@@ -427,19 +424,19 @@ Texture* RenderContext::CreateRenderTarget( IntVec2 texelSize , D3D_DXGI_FORMAT 
 	desc.Format						=  ( DXGI_FORMAT )( format );
 	desc.SampleDesc.Count			= 1;																					// Multi sampling Anti-Aliasing
 	desc.SampleDesc.Quality			= 0;																					// Multi sampling Anti-Aliasing
-	desc.Usage						= D3D11_USAGE_DEFAULT;																	//  if we do mip-chains, we change this to GPU/DEFAULT
-	desc.BindFlags					= D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE ;
+	desc.Usage						= D3D12_USAGE_DEFAULT;																	//  if we do mip-chains, we change this to GPU/DEFAULT
+	desc.BindFlags					= D3D12_BIND_RENDER_TARGET | D3D12_BIND_SHADER_RESOURCE ;
 	desc.CPUAccessFlags				= 0;																					// does the CPU write to this? 0  = no
 	desc.MiscFlags					= 0;																					// extension features like cube maps
 
 	// DirectX Creation
-	ID3D11Texture2D* texHandle = nullptr;
+	ID3D12Texture2D* texHandle = nullptr;
 	m_device->CreateTexture2D( &desc , nullptr , &texHandle );
 
 	Texture* temp = new Texture( this , texHandle );
 	
 	std::string debugName = "Render Target Texture";
-	SetDebugName( ( ID3D11DeviceChild* ) temp->GetHandle() , &debugName );
+	SetDebugName( ( ID3D12DeviceChild* ) temp->GetHandle() , &debugName );
 
 	TextureView* renderTarget = temp->GetOrCreateRenderTargetView();
 	SetDebugName( renderTarget->m_rtv , &debugRenderTargetName );
@@ -477,7 +474,7 @@ Texture* RenderContext::GetOrCreatematchingUAVTarget( Texture* texture , std::st
 
 Texture* RenderContext::CreateUAVTarget( IntVec2 texelSize , std::string debugUAVTargetName /*= "Unreleased UAV Texture" */ )
 {
-	D3D11_TEXTURE2D_DESC desc;
+	D3D12_TEXTURE2D_DESC desc;
 	desc.Width = texelSize.x;
 	desc.Height = texelSize.y;
 	desc.MipLevels = 1;
@@ -485,19 +482,19 @@ Texture* RenderContext::CreateUAVTarget( IntVec2 texelSize , std::string debugUA
 	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.SampleDesc.Count = 1;															// Multi sampling Anti-Aliasing
 	desc.SampleDesc.Quality = 0;														// Multi sampling Anti-Aliasing
-	desc.Usage = D3D11_USAGE_DEFAULT;													//  if we do mip-chains, we change this to GPU/DEFAULT
-	desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	desc.Usage = D3D12_USAGE_DEFAULT;													//  if we do mip-chains, we change this to GPU/DEFAULT
+	desc.BindFlags = D3D12_BIND_UNORDERED_ACCESS | D3D12_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = 0;															// does the CPU write to this? 0  = no
 	desc.MiscFlags = 0;																	// extension features like cube maps
 
 	// DirectX Creation
-	ID3D11Texture2D* texHandle = nullptr;
+	ID3D12Texture2D* texHandle = nullptr;
 	m_device->CreateTexture2D( &desc , nullptr , &texHandle );
 
 	Texture* temp = new Texture( this , texHandle );
 
 	std::string debugName = "Unordered Access View Texture";
-	//SetDebugName( ( ID3D11DeviceChild* ) temp->GetHandle() , &debugName );
+	//SetDebugName( ( ID3D12DeviceChild* ) temp->GetHandle() , &debugName );
 
 	TextureView* uavTarget = temp->GetOrCreateUnorderedAccessView();
 	//SetDebugName( uavTarget->m_uav , &debugUAVTargetName );
@@ -523,7 +520,7 @@ void RenderContext::BeginCamera( const Camera& camera )
 #endif
 
 	size_t rtvCount = camera.GetColorTargetCount();
-	std::vector<ID3D11RenderTargetView*> rtvs;
+	std::vector<ID3D12RenderTargetView*> rtvs;
 	
 	rtvs.resize( rtvCount );
 
@@ -575,7 +572,7 @@ void RenderContext::BeginCamera( const Camera& camera )
 		}
 		
 		TextureView* backbuffer_rtv = backbuffer->GetOrCreateRenderTargetView();
-		ID3D11RenderTargetView* rtv = backbuffer_rtv->GetRTVHandle();
+		ID3D12RenderTargetView* rtv = backbuffer_rtv->GetRTVHandle();
 		rtvs[ 0 ] = rtv;
 		m_context->ClearRenderTargetView( rtv , clearFloats );
 		//ClearScreen( camera.GetClearColor() );
@@ -598,7 +595,7 @@ void RenderContext::BeginCamera( const Camera& camera )
 		rtvCount++;
 		rtvs.resize( rtvCount );
 		TextureView* target_rtv = m_textureTarget->GetOrCreateRenderTargetView();
-		ID3D11RenderTargetView* rtv = target_rtv->GetRTVHandle();
+		ID3D12RenderTargetView* rtv = target_rtv->GetRTVHandle();
 		rtvs[ 0 ] = rtv;
 	}
 
@@ -606,7 +603,7 @@ void RenderContext::BeginCamera( const Camera& camera )
 
 	IntVec2 output = m_textureTarget->GetDimensions();
 
-	D3D11_VIEWPORT viewport;
+	D3D12_VIEWPORT viewport;
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
 	viewport.Width = ( float ) output.x;
@@ -616,7 +613,7 @@ void RenderContext::BeginCamera( const Camera& camera )
 	
 	m_context->RSSetViewports( 1 , &viewport );
 
-	//ID3D11RenderTargetView* rtv = m_textureTarget->GetOrCreateRenderTargetView()->GetRTVHandle();
+	//ID3D12RenderTargetView* rtv = m_textureTarget->GetOrCreateRenderTargetView()->GetRTVHandle();
 	//BindDepthStencil( m_textureTarget );
 		
 	m_context->OMSetRenderTargets( ( UINT ) rtvCount ,          // One rendertarget view
@@ -786,8 +783,8 @@ void RenderContext::SetInputLayoutForIA( buffer_attribute_t const* attribs )
 	m_context->CSSetShader( m_currentShader->m_computeStage.m_computeShader , nullptr , 0 );
 	
 	// So at this, I need to describe the vertex format to the shader
-	//ID3D11InputLayout* inputLayout = m_currentShader->GetOrCreateInputLayout( Vertex_PCU::LAYOUT );
-	ID3D11InputLayout* inputLayout = m_currentShader->GetOrCreateInputLayout( attribs );
+	//ID3D12InputLayout* inputLayout = m_currentShader->GetOrCreateInputLayout( Vertex_PCU::LAYOUT );
+	ID3D12InputLayout* inputLayout = m_currentShader->GetOrCreateInputLayout( attribs );
 	// do similar to last bound VBO
 	m_context->IASetInputLayout( inputLayout );
 }
@@ -843,7 +840,7 @@ Texture* RenderContext::CreateTextureFromFile( const char* imageFilePath )
 		int numComponents = 0; // This will be filled in for us to indicate how many color components the image had (e.g. 3=RGB=24bit, 4=RGBA=32bit)
 		int numComponentsRequested = 4; // don't care; we support 3 (24-bit RGB) or 4 (32-bit RGBA)
 
-		stbi_set_flip_vertically_on_load( 1 ); // We prefer uvTexCoords has origin (0,0) at BOTTOM LEFT ,  0 for D3D11
+		stbi_set_flip_vertically_on_load( 1 ); // We prefer uvTexCoords has origin (0,0) at BOTTOM LEFT ,  0 for D3D12
 		unsigned char* imageData = stbi_load( imageFilePath , &imageTexelSizeX , &imageTexelSizeY , &numComponents , numComponentsRequested );
 
 		// Check if the load was successful
@@ -857,7 +854,7 @@ Texture* RenderContext::CreateTextureFromFile( const char* imageFilePath )
 		//GUARANTEE_OR_DIE( numComponents == 4 && imageTexelSizeX > 0 && imageTexelSizeY > 0 , Stringf( "ERROR loading image \"%s\" (Bpp=%i, size=%i,%i)" , imageFilePath , numComponents , imageTexelSizeX , imageTexelSizeY ) );
 
 		// describe the texture
-		D3D11_TEXTURE2D_DESC desc;
+		D3D12_TEXTURE2D_DESC desc;
 		desc.Width = imageTexelSizeX;
 		desc.Height = imageTexelSizeY;
 		desc.MipLevels = 1;
@@ -865,18 +862,18 @@ Texture* RenderContext::CreateTextureFromFile( const char* imageFilePath )
 		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		desc.SampleDesc.Count = 1;							// Multi sampling Anti-Aliasing
 		desc.SampleDesc.Quality = 0;						// Multi sampling Anti-Aliasing
-		desc.Usage = D3D11_USAGE_IMMUTABLE;					//  if we do mip-chains, we change this to GPU/DEFAULT
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.Usage = D3D12_USAGE_IMMUTABLE;					//  if we do mip-chains, we change this to GPU/DEFAULT
+		desc.BindFlags = D3D12_BIND_SHADER_RESOURCE;
 		desc.CPUAccessFlags = 0;							// does the CPU write to this? 0  = no
 		desc.MiscFlags = 0;									// extension features like cube maps
 
-		D3D11_SUBRESOURCE_DATA initialData;
+		D3D12_SUBRESOURCE_DATA initialData;
 		initialData.pSysMem = imageData;
 		initialData.SysMemPitch = imageTexelSizeX * 4;
 		initialData.SysMemSlicePitch = 0;					// for 3D texturing
 
 		// DirectX Creation
-		ID3D11Texture2D* texHandle = nullptr;
+		ID3D12Texture2D* texHandle = nullptr;
 		m_device->CreateTexture2D( &desc , &initialData , &texHandle );
 
 
@@ -886,7 +883,7 @@ Texture* RenderContext::CreateTextureFromFile( const char* imageFilePath )
 		//delete temp;
 		//temp = nullptr;
 		std::string filePath = imageFilePath;
-		SetDebugName( ( ID3D11DeviceChild* ) temp->GetHandle() , &filePath );
+		SetDebugName( ( ID3D12DeviceChild* ) temp->GetHandle() , &filePath );
 		return m_LoadedTextures[ imageFilePath ];
 }
 
@@ -900,7 +897,7 @@ Texture* RenderContext::CreateTextureCubeFromFile( const char* imageFilePath )
 	int numComponents = 0; // This will be filled in for us to indicate how many color components the image had (e.g. 3=RGB=24bit, 4=RGBA=32bit)
 	int numComponentsRequested = 4; // don't care; we support 3 (24-bit RGB) or 4 (32-bit RGBA)
 
-	stbi_set_flip_vertically_on_load( 1 ); // We prefer uvTexCoords has origin (0,0) at BOTTOM LEFT ,  0 for D3D11
+	stbi_set_flip_vertically_on_load( 1 ); // We prefer uvTexCoords has origin (0,0) at BOTTOM LEFT ,  0 for D3D12
 	unsigned char* imageData = stbi_load( imageFilePath , &imageTexelSizeX , &imageTexelSizeY , &numComponents , numComponentsRequested );
 
 	// Check if the load was successful
@@ -912,8 +909,8 @@ Texture* RenderContext::CreateTextureCubeFromFile( const char* imageFilePath )
 	GUARANTEE_OR_DIE( ( ( w > 0 ) && ( w == h ) ) != false , Stringf( "Bad CubeMap Texture File \"%s\"" , imageFilePath ) );
 
 	// describe the texture
-	D3D11_TEXTURE2D_DESC cubeDesc;
-	memset( &cubeDesc , 0 , sizeof( D3D11_TEXTURE2D_DESC ) );
+	D3D12_TEXTURE2D_DESC cubeDesc;
+	memset( &cubeDesc , 0 , sizeof( D3D12_TEXTURE2D_DESC ) );
 	
 	cubeDesc.Width = w;
 	cubeDesc.Height = w;
@@ -922,14 +919,14 @@ Texture* RenderContext::CreateTextureCubeFromFile( const char* imageFilePath )
 	cubeDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	cubeDesc.SampleDesc.Count = 1;							// Multi sampling Anti-Aliasing
 	cubeDesc.SampleDesc.Quality = 0;						// Multi sampling Anti-Aliasing
-	cubeDesc.Usage = D3D11_USAGE_DEFAULT;					//  if we do mip-chains, we change this to GPU/DEFAULT
-	cubeDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	cubeDesc.Usage = D3D12_USAGE_DEFAULT;					//  if we do mip-chains, we change this to GPU/DEFAULT
+	cubeDesc.BindFlags = D3D12_BIND_SHADER_RESOURCE;
 	cubeDesc.CPUAccessFlags = 0;							// does the CPU write to this? 0  = no
-	cubeDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;	// extension features like cube maps
+	cubeDesc.MiscFlags = D3D12_RESOURCE_MISC_TEXTURECUBE;	// extension features like cube maps
 
 
-	D3D11_SUBRESOURCE_DATA data[ TEXCUBE_SIDE_COUNT ];
-	D3D11_SUBRESOURCE_DATA* pdata = nullptr;
+	D3D12_SUBRESOURCE_DATA data[ TEXCUBE_SIDE_COUNT ];
+	D3D12_SUBRESOURCE_DATA* pdata = nullptr;
 
 	pdata = data;
 	memset( &data , 0 , sizeof( data ) );
@@ -954,16 +951,16 @@ Texture* RenderContext::CreateTextureCubeFromFile( const char* imageFilePath )
 		data[ i ].SysMemPitch = total_pitch;
 	}
 
-	CD3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
-	//memset( &viewDesc , 0 , sizeof( CD3D11_SHADER_RESOURCE_VIEW_DESC ) );
+	CD3D12_SHADER_RESOURCE_VIEW_DESC viewDesc;
+	//memset( &viewDesc , 0 , sizeof( CD3D12_SHADER_RESOURCE_VIEW_DESC ) );
 
 	viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	viewDesc.TextureCube.MipLevels = 1;
-	viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	viewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 	viewDesc.TextureCube.MostDetailedMip = 0;
 
 	// create my resource
-	ID3D11Texture2D* texHandle = nullptr;
+	ID3D12Texture2D* texHandle = nullptr;
 	if( FAILED( m_device->CreateTexture2D( &cubeDesc , pdata , &texHandle ) ) )
 	{
 		GUARANTEE_OR_DIE( false , "Failed to create cube texture." );
@@ -975,7 +972,7 @@ Texture* RenderContext::CreateTextureCubeFromFile( const char* imageFilePath )
 	m_LoadedCubeTextures[ imageFilePath ] = temp;
 	
 	std::string filePath = imageFilePath;
-	SetDebugName( ( ID3D11DeviceChild* ) temp->GetHandle() , &filePath );
+	SetDebugName( ( ID3D12DeviceChild* ) temp->GetHandle() , &filePath );
 	
 	return m_LoadedCubeTextures[ imageFilePath ];
 }
@@ -1004,7 +1001,7 @@ void RenderContext::StartEffect( Texture* destination , Texture* source , Shader
 
 void RenderContext::EndEffect()
 {
-	m_context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+	m_context->IASetPrimitiveTopology( D3D12_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 	Draw( 3 , 0 );
 	EndCamera( *m_effectCamera );
 }
@@ -1172,7 +1169,7 @@ void RenderContext::BindTexture ( const Texture* constTexture , UINT textureType
 		if( nullptr == constTexture )
 		{
 			TextureView* shaderResourceViewPS = m_textureDefault->GetOrCreateShaderResourceView();
-			ID3D11ShaderResourceView* shaderResourceViewHandlePS = shaderResourceViewPS->GetSRVHandle();
+			ID3D12ShaderResourceView* shaderResourceViewHandlePS = shaderResourceViewPS->GetSRVHandle();
 			m_context->PSSetShaderResources( textureType + userTextureIndexOffset , 1 , &shaderResourceViewHandlePS );
 			return;
 		}
@@ -1180,14 +1177,14 @@ void RenderContext::BindTexture ( const Texture* constTexture , UINT textureType
 		if ( nullptr == constTexture && textureType == TEX_NORMAL )
 		{
 			TextureView* shaderResourceViewPS = m_flatNormal->GetOrCreateShaderResourceView();
-			ID3D11ShaderResourceView* shaderResourceViewHandlePS = shaderResourceViewPS->GetSRVHandle();
+			ID3D12ShaderResourceView* shaderResourceViewHandlePS = shaderResourceViewPS->GetSRVHandle();
 			m_context->PSSetShaderResources( textureType + userTextureIndexOffset , 1 , &shaderResourceViewHandlePS );
 			return;
 		}
 
 		Texture* texturePS = const_cast< Texture* >( constTexture );
 		TextureView* shaderResourceViewPS = texturePS->GetOrCreateShaderResourceView();
-		ID3D11ShaderResourceView* shaderResourceViewHandlePS = shaderResourceViewPS->GetSRVHandle();
+		ID3D12ShaderResourceView* shaderResourceViewHandlePS = shaderResourceViewPS->GetSRVHandle();
 		m_context->PSSetShaderResources( textureType + userTextureIndexOffset , 1 , &shaderResourceViewHandlePS );
 		return;
 	}
@@ -1196,7 +1193,7 @@ void RenderContext::BindTexture ( const Texture* constTexture , UINT textureType
 		if( nullptr == constTexture )
 		{
 			TextureView* shaderResourceViewCS = m_textureDefault->GetOrCreateShaderResourceView();
-			ID3D11ShaderResourceView* shaderResourceViewHandleCS = shaderResourceViewCS->GetSRVHandle();
+			ID3D12ShaderResourceView* shaderResourceViewHandleCS = shaderResourceViewCS->GetSRVHandle();
 			m_context->CSSetShaderResources( textureType + userTextureIndexOffset , 1 , &shaderResourceViewHandleCS );
 			return;
 		}
@@ -1204,14 +1201,14 @@ void RenderContext::BindTexture ( const Texture* constTexture , UINT textureType
 		if ( nullptr == constTexture && textureType == TEX_NORMAL )
 		{
 			TextureView* shaderResourceViewCS = m_flatNormal->GetOrCreateShaderResourceView();
-			ID3D11ShaderResourceView* shaderResourceViewHandleCS = shaderResourceViewCS->GetSRVHandle();
+			ID3D12ShaderResourceView* shaderResourceViewHandleCS = shaderResourceViewCS->GetSRVHandle();
 			m_context->CSSetShaderResources( textureType + userTextureIndexOffset , 1 , &shaderResourceViewHandleCS );
 			return;
 		}
 
 		Texture* texture = const_cast< Texture* >( constTexture );
 		TextureView* shaderResourceViewCS = texture->GetOrCreateShaderResourceView();
-		ID3D11ShaderResourceView* shaderResourceViewHandleCS = shaderResourceViewCS->GetSRVHandle();
+		ID3D12ShaderResourceView* shaderResourceViewHandleCS = shaderResourceViewCS->GetSRVHandle();
 		m_context->CSSetShaderResources( textureType + userTextureIndexOffset , 1 , &shaderResourceViewHandleCS );
 		return;
 	}
@@ -1228,14 +1225,14 @@ void RenderContext::BindUAVTexture( const Texture* constTexture , UINT textureTy
 	if( nullptr == constTexture )
 	{
 		TextureView* unorderedAccessView = m_textureDefault->GetOrCreateUnorderedAccessView();
-		ID3D11UnorderedAccessView* unorderedAccessViewHandle = unorderedAccessView->GetUAVHandle();
+		ID3D12UnorderedAccessView* unorderedAccessViewHandle = unorderedAccessView->GetUAVHandle();
 		m_context->CSSetUnorderedAccessViews( textureType + userTextureIndexOffset , 1 , &unorderedAccessViewHandle , 0 );
 		return;
 	}
 
 	Texture* texture = const_cast< Texture* >( constTexture );
 	TextureView* unorderedAccessView = texture->GetOrCreateUnorderedAccessView();
-	ID3D11UnorderedAccessView* unorderedAccessViewHandle = unorderedAccessView->GetUAVHandle();
+	ID3D12UnorderedAccessView* unorderedAccessViewHandle = unorderedAccessView->GetUAVHandle();
 	m_context->CSSetUnorderedAccessViews( textureType + userTextureIndexOffset , 1 , &unorderedAccessViewHandle , 0 );
 }
 
@@ -1246,14 +1243,14 @@ void RenderContext::BindCubeMapTexture( const Texture* constTexture )
 	if( nullptr == constTexture )
 	{
 		TextureView* shaderResourceView = m_textureDefault->GetOrCreateCubeMapShaderResourceView();
-		ID3D11ShaderResourceView* shaderResourceViewHandle = shaderResourceView->GetSRVHandle();
+		ID3D12ShaderResourceView* shaderResourceViewHandle = shaderResourceView->GetSRVHandle();
 		m_context->PSSetShaderResources( 0 , 1 , &shaderResourceViewHandle );
 		return;
 	}
 
 	Texture* texture = const_cast< Texture* >( constTexture );
 	TextureView* shaderResourceView = texture->GetOrCreateCubeMapShaderResourceView();
-	ID3D11ShaderResourceView* shaderResourceViewHandle = shaderResourceView->GetSRVHandle();
+	ID3D12ShaderResourceView* shaderResourceViewHandle = shaderResourceView->GetSRVHandle();
 	m_context->PSSetShaderResources( 0 , 1 , &shaderResourceViewHandle );
 }
 
@@ -1261,56 +1258,56 @@ void RenderContext::BindCubeMapTexture( const Texture* constTexture )
 
 void RenderContext::CreateBlendStates()
 {
-	D3D11_BLEND_DESC alphaDesc;
+	D3D12_BLEND_DESC alphaDesc;
 
 	alphaDesc.AlphaToCoverageEnable = false;
 	alphaDesc.IndependentBlendEnable = false;
 	alphaDesc.RenderTarget[ 0 ].BlendEnable = true;
-	alphaDesc.RenderTarget[ 0 ].BlendOp = D3D11_BLEND_OP_ADD;
-	alphaDesc.RenderTarget[ 0 ].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	alphaDesc.RenderTarget[ 0 ].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	alphaDesc.RenderTarget[ 0 ].BlendOp = D3D12_BLEND_OP_ADD;
+	alphaDesc.RenderTarget[ 0 ].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	alphaDesc.RenderTarget[ 0 ].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
 
-	alphaDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	alphaDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D11_BLEND_ONE;
-	alphaDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D11_BLEND_ZERO;
+	alphaDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	alphaDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D12_BLEND_ONE;
+	alphaDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D12_BLEND_ZERO;
 
 	// render all output
-	alphaDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	alphaDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	m_device->CreateBlendState( &alphaDesc , &m_blendStates[ eBlendMode::ALPHA ] );
 
-	D3D11_BLEND_DESC additiveDesc;
+	D3D12_BLEND_DESC additiveDesc;
 
 	additiveDesc.AlphaToCoverageEnable = false;
 	additiveDesc.IndependentBlendEnable = false;
 	additiveDesc.RenderTarget[ 0 ].BlendEnable = true;
-	additiveDesc.RenderTarget[ 0 ].BlendOp = D3D11_BLEND_OP_ADD;
-	additiveDesc.RenderTarget[ 0 ].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	additiveDesc.RenderTarget[ 0 ].DestBlend = D3D11_BLEND_ONE;
+	additiveDesc.RenderTarget[ 0 ].BlendOp = D3D12_BLEND_OP_ADD;
+	additiveDesc.RenderTarget[ 0 ].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	additiveDesc.RenderTarget[ 0 ].DestBlend = D3D12_BLEND_ONE;
 
-	additiveDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	additiveDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
-	additiveDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D11_BLEND_ONE;
+	additiveDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	additiveDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+	additiveDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D12_BLEND_ONE;
 
 	// render all output
-	additiveDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	additiveDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	m_device->CreateBlendState( &additiveDesc , &m_blendStates[ eBlendMode::ADDITIVE ] );
 
-	D3D11_BLEND_DESC opaqueDesc;
+	D3D12_BLEND_DESC opaqueDesc;
 
 	opaqueDesc.AlphaToCoverageEnable = false;
 	opaqueDesc.IndependentBlendEnable = false;
 	opaqueDesc.RenderTarget[ 0 ].BlendEnable = false;
-	opaqueDesc.RenderTarget[ 0 ].BlendOp = D3D11_BLEND_OP_ADD;
-	opaqueDesc.RenderTarget[ 0 ].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	opaqueDesc.RenderTarget[ 0 ].DestBlend = D3D11_BLEND_ZERO;
+	opaqueDesc.RenderTarget[ 0 ].BlendOp = D3D12_BLEND_OP_ADD;
+	opaqueDesc.RenderTarget[ 0 ].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	opaqueDesc.RenderTarget[ 0 ].DestBlend = D3D12_BLEND_ZERO;
 
-	opaqueDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	opaqueDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D11_BLEND_ONE;
-	opaqueDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D11_BLEND_ZERO;
+	opaqueDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	opaqueDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D12_BLEND_ONE;
+	opaqueDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D12_BLEND_ZERO;
 
 	// render all output
-	opaqueDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	opaqueDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 	m_device->CreateBlendState( &opaqueDesc , &m_blendStates[ eBlendMode::SOLID ] );
 }
 
@@ -1318,10 +1315,10 @@ void RenderContext::CreateBlendStates()
 
 void RenderContext::CreateRasterStates()
 {
-	D3D11_RASTERIZER_DESC fillSoliddesc;
+	D3D12_RASTERIZER_DESC fillSoliddesc;
 
-	fillSoliddesc.FillMode = D3D11_FILL_SOLID; // full triangle switch for wireframe
-	fillSoliddesc.CullMode = D3D11_CULL_NONE;
+	fillSoliddesc.FillMode = D3D12_FILL_SOLID; // full triangle switch for wireframe
+	fillSoliddesc.CullMode = D3D12_CULL_NONE;
 	fillSoliddesc.FrontCounterClockwise = TRUE;
 	fillSoliddesc.DepthBias = 0U;
 	fillSoliddesc.DepthBiasClamp = 0.0f;
@@ -1333,10 +1330,10 @@ void RenderContext::CreateRasterStates()
 
 	m_device->CreateRasterizerState( &fillSoliddesc , &m_rasterStates[ eRasterStateFillMode::FILL_SOLID ] );
 
- 	D3D11_RASTERIZER_DESC wireFramedesc;
+ 	D3D12_RASTERIZER_DESC wireFramedesc;
  
- 	wireFramedesc.FillMode = D3D11_FILL_WIREFRAME; // full triangle switch for wireframe
- 	wireFramedesc.CullMode = D3D11_CULL_NONE;
+ 	wireFramedesc.FillMode = D3D12_FILL_WIREFRAME; // full triangle switch for wireframe
+ 	wireFramedesc.CullMode = D3D12_CULL_NONE;
  	wireFramedesc.FrontCounterClockwise = TRUE;
  	wireFramedesc.DepthBias = 0U;
  	wireFramedesc.DepthBiasClamp = 0.0f;
@@ -1355,13 +1352,13 @@ void RenderContext::CreateTransientRasterState( eRasterStateFillMode rasterFillM
 {
 	if ( m_transientRaterState )
 	{
-		D3D11_RASTERIZER_DESC currentRSDesc;
+		D3D12_RASTERIZER_DESC currentRSDesc;
 
 		m_transientRaterState->GetDesc( &currentRSDesc );
 		bool result = false;
 
-		if ( currentRSDesc.FillMode == GetD3D11FillMode( rasterFillMode ) )				{	result = result & true;	}
-		if ( currentRSDesc.CullMode == GetD3D11CullMode( cullMode ) )					{	result = result & true;	}
+		if ( currentRSDesc.FillMode == GetD3D12FillMode( rasterFillMode ) )				{	result = result & true;	}
+		if ( currentRSDesc.CullMode == GetD3D12CullMode( cullMode ) )					{	result = result & true;	}
 		if ( currentRSDesc.FrontCounterClockwise == ::GetWindingOrder( windingOrder ) )	{	result = result & true;	}
 		
 		if ( result )
@@ -1375,10 +1372,10 @@ void RenderContext::CreateTransientRasterState( eRasterStateFillMode rasterFillM
 		DX_SAFE_RELEASE( m_transientRaterState );
 	}
 	
-	D3D11_RASTERIZER_DESC desc;
+	D3D12_RASTERIZER_DESC desc;
 
-	desc.FillMode = GetD3D11FillMode( rasterFillMode ); // full triangle switch for wireframe
-	desc.CullMode = GetD3D11CullMode( cullMode );
+	desc.FillMode = GetD3D12FillMode( rasterFillMode ); // full triangle switch for wireframe
+	desc.CullMode = GetD3D12CullMode( cullMode );
 	desc.FrontCounterClockwise = ::GetWindingOrder( windingOrder );
 	desc.DepthBias = 0U;
 	desc.DepthBiasClamp = 0.0f;
@@ -1395,13 +1392,13 @@ void RenderContext::CreateTransientRasterState( eRasterStateFillMode rasterFillM
 
 void RenderContext::SetCullMode( eCullMode cullMode )
 {
-	D3D11_RASTERIZER_DESC currentRasterStateDesc;
+	D3D12_RASTERIZER_DESC currentRasterStateDesc;
 	m_currentRasterState->GetDesc( &currentRasterStateDesc );
 
-	if ( currentRasterStateDesc.CullMode != GetD3D11CullMode( cullMode ) )
+	if ( currentRasterStateDesc.CullMode != GetD3D12CullMode( cullMode ) )
 	{
-		CreateTransientRasterState( GetFillModeForD3D11RasterState( currentRasterStateDesc.FillMode ) , cullMode ,
-									GetWindingOrderForD3D11WindingOrder( currentRasterStateDesc.FrontCounterClockwise ) );
+		CreateTransientRasterState( GetFillModeForD3D12RasterState( currentRasterStateDesc.FillMode ) , cullMode ,
+									GetWindingOrderForD3D12WindingOrder( currentRasterStateDesc.FrontCounterClockwise ) );
 
 		SetTransientRasterStateAsRasterState();
 	}
@@ -1415,13 +1412,13 @@ void RenderContext::SetCullMode( eCullMode cullMode )
 
 void RenderContext::SetFillMode( eRasterStateFillMode rasterFillMode )
 {
-	D3D11_RASTERIZER_DESC currentRasterStateDesc;
+	D3D12_RASTERIZER_DESC currentRasterStateDesc;
 	m_currentRasterState->GetDesc( &currentRasterStateDesc );
 	
-	if ( currentRasterStateDesc.FillMode != GetD3D11FillMode( rasterFillMode ) )
+	if ( currentRasterStateDesc.FillMode != GetD3D12FillMode( rasterFillMode ) )
 	{
-		CreateTransientRasterState( rasterFillMode , GetCullModeForD3D11CullMode( currentRasterStateDesc.CullMode ) ,
-									GetWindingOrderForD3D11WindingOrder( currentRasterStateDesc.FrontCounterClockwise ) );
+		CreateTransientRasterState( rasterFillMode , GetCullModeForD3D12CullMode( currentRasterStateDesc.CullMode ) ,
+									GetWindingOrderForD3D12WindingOrder( currentRasterStateDesc.FrontCounterClockwise ) );
 
 		SetTransientRasterStateAsRasterState();
 	}
@@ -1435,13 +1432,13 @@ void RenderContext::SetFillMode( eRasterStateFillMode rasterFillMode )
 
 void RenderContext::SetWindingOrder( eWindingOrder windingOrder )
 {
-	D3D11_RASTERIZER_DESC currentRasterStateDesc;
+	D3D12_RASTERIZER_DESC currentRasterStateDesc;
 	m_currentRasterState->GetDesc( &currentRasterStateDesc );
 
 	if ( currentRasterStateDesc.FrontCounterClockwise != ::GetWindingOrder( windingOrder ) )
 	{
-		CreateTransientRasterState( GetFillModeForD3D11RasterState( currentRasterStateDesc.FillMode ) ,
-		                            GetCullModeForD3D11CullMode( currentRasterStateDesc.CullMode ) , windingOrder );
+		CreateTransientRasterState( GetFillModeForD3D12RasterState( currentRasterStateDesc.FillMode ) ,
+		                            GetCullModeForD3D12CullMode( currentRasterStateDesc.CullMode ) , windingOrder );
 
 		SetTransientRasterStateAsRasterState();
 	}
@@ -1455,30 +1452,30 @@ void RenderContext::SetWindingOrder( eWindingOrder windingOrder )
 
 eCullMode RenderContext::GetCullMode() const
 {
-	D3D11_RASTERIZER_DESC currentRasterStateDesc;
+	D3D12_RASTERIZER_DESC currentRasterStateDesc;
 	m_currentRasterState->GetDesc( &currentRasterStateDesc );
 
-	return GetCullModeForD3D11CullMode( currentRasterStateDesc.CullMode );
+	return GetCullModeForD3D12CullMode( currentRasterStateDesc.CullMode );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 eRasterStateFillMode RenderContext::GetFillMode() const
 {
-	D3D11_RASTERIZER_DESC currentRasterStateDesc;
+	D3D12_RASTERIZER_DESC currentRasterStateDesc;
 	m_currentRasterState->GetDesc( &currentRasterStateDesc );
 
-	return GetFillModeForD3D11RasterState( currentRasterStateDesc.FillMode );
+	return GetFillModeForD3D12RasterState( currentRasterStateDesc.FillMode );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 eWindingOrder RenderContext::GetWindingOrder() const
 {
-	D3D11_RASTERIZER_DESC currentRasterStateDesc;
+	D3D12_RASTERIZER_DESC currentRasterStateDesc;
 	m_currentRasterState->GetDesc( &currentRasterStateDesc );
 
-	return GetWindingOrderForD3D11WindingOrder( currentRasterStateDesc.FrontCounterClockwise );
+	return GetWindingOrderForD3D12WindingOrder( currentRasterStateDesc.FrontCounterClockwise );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1737,7 +1734,7 @@ BitmapFont* RenderContext::GetOrCreateBitmapFontFromFile( std::string bitmapFont
  	}
  	return Temp;
 // 	UNUSED( bitmapFontFilePath );
-// 	GUARANTEE_OR_DIE( false , "Starting Stuff replace with D3D11" );
+// 	GUARANTEE_OR_DIE( false , "Starting Stuff replace with D3D12" );
 
 }
 
@@ -2001,7 +1998,7 @@ bool RenderContext::BindMaterial( Material* material )
 
 void RenderContext::BindVertexBuffer( VertexBuffer* vbo )
 {
-	ID3D11Buffer* vboHandle = vbo->m_handle;
+	ID3D12Buffer* vboHandle = vbo->m_handle;
 	//UINT stride = ( UINT ) sizeof( Vertex_PCU );	//	how far from one vertex to next
 	UINT stride = ( UINT ) vbo->GetVBOStride();	//	how far from one vertex to next
 	UINT offset = 0;								//  how far into buffer we start
@@ -2009,7 +2006,7 @@ void RenderContext::BindVertexBuffer( VertexBuffer* vbo )
 	if (m_lastBoundVBO != vboHandle )
 	{
 		m_context->IASetVertexBuffers( 0 , 1 , &vboHandle , &stride , &offset );
-		m_context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+		m_context->IASetPrimitiveTopology( D3D12_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 		m_lastBoundVBO = vboHandle;
 	}
 }
@@ -2018,13 +2015,13 @@ void RenderContext::BindVertexBuffer( VertexBuffer* vbo )
 
 void RenderContext::BindIndexBuffer( IndexBuffer* ibo )
 {
-	ID3D11Buffer* iboHandle = ibo->m_handle;
+	ID3D12Buffer* iboHandle = ibo->m_handle;
 	UINT offset = 0;								//  how far into buffer we start
 
 	if ( m_lastBoundIBO != iboHandle )
 	{
 		m_context->IASetIndexBuffer( iboHandle , DXGI_FORMAT_R32_UINT , offset );
-		//m_context->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_LINELIST );
+		//m_context->IASetPrimitiveTopology( D3D12_PRIMITIVE_TOPOLOGY_LINELIST );
 		m_lastBoundIBO = iboHandle;
 	}
 	else
@@ -2037,7 +2034,7 @@ void RenderContext::BindIndexBuffer( IndexBuffer* ibo )
 
 void RenderContext::BindUniformBuffer( unsigned int slot , RenderBuffer* ubo )
 {
-	ID3D11Buffer* uboHandle = ubo->m_handle; /*ubo->GetHandle();*/
+	ID3D12Buffer* uboHandle = ubo->m_handle; /*ubo->GetHandle();*/
 
 	m_context->VSSetConstantBuffers( slot , 1 , &uboHandle );
 	m_context->PSSetConstantBuffers( slot , 1 , &uboHandle );
@@ -2072,11 +2069,11 @@ void RenderContext::BindSampler( const Sampler* sampler , uint samplerSlot /* = 
 {
 	if ( nullptr == sampler )
 	{
-		ID3D11SamplerState* samplerHandle = m_defaultSampler->GetHandle();
+		ID3D12SamplerState* samplerHandle = m_defaultSampler->GetHandle();
 		m_context->PSSetSamplers( samplerSlot , 1 , &samplerHandle );
 		return;
 	}
-	ID3D11SamplerState* samplerHandle = sampler->GetHandle();
+	ID3D12SamplerState* samplerHandle = sampler->GetHandle();
 	m_context->PSSetSamplers( samplerSlot , 1 , &samplerHandle );
 }
 
@@ -2085,7 +2082,7 @@ void RenderContext::BindSampler( const Sampler* sampler , uint samplerSlot /* = 
 void RenderContext::BindDepthStencil( Texture* depthStencilView )
 {
 	int rtvCount = m_currentCamera->GetColorTargetCount();
-	std::vector<ID3D11RenderTargetView*> rtvs;
+	std::vector<ID3D12RenderTargetView*> rtvs;
 
 	rtvs.resize( rtvCount );
 
@@ -2146,7 +2143,7 @@ Texture* RenderContext::CreateTextureFromColor( Rgba8 color )
 	unsigned char* imageData = &color.r;
 
 	// describe the texture
-	D3D11_TEXTURE2D_DESC desc;
+	D3D12_TEXTURE2D_DESC desc;
 	desc.Width = imageTexelSizeX;
 	desc.Height = imageTexelSizeY;
 	desc.MipLevels = 1;
@@ -2154,18 +2151,18 @@ Texture* RenderContext::CreateTextureFromColor( Rgba8 color )
 	desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	desc.SampleDesc.Count = 1;							// Multi sampling Anti-Aliasing
 	desc.SampleDesc.Quality = 0;						// Multi sampling Anti-Aliasing
-	desc.Usage = D3D11_USAGE_IMMUTABLE;					//  if we do mip-chains, we change this to GPU/DEFAULT
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	desc.Usage = D3D12_USAGE_IMMUTABLE;					//  if we do mip-chains, we change this to GPU/DEFAULT
+	desc.BindFlags = D3D12_BIND_SHADER_RESOURCE;
 	desc.CPUAccessFlags = 0;							// does the CPU write to this? 0  = no
 	desc.MiscFlags = 0;									// extension features like cube maps
 
-	D3D11_SUBRESOURCE_DATA initialData;
+	D3D12_SUBRESOURCE_DATA initialData;
 	initialData.pSysMem = imageData;
 	initialData.SysMemPitch = imageTexelSizeX * 4;
 	initialData.SysMemSlicePitch = 0;					// for 3D texturing
 
 	// DirectX Creation
-	ID3D11Texture2D* texHandle = nullptr;
+	ID3D12Texture2D* texHandle = nullptr;
 	m_device->CreateTexture2D( &desc , &initialData , &texHandle );
 
 // 	delete imageData;

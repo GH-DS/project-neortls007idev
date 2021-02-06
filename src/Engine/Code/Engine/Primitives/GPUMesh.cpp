@@ -1,12 +1,10 @@
 #include "Engine/Primitives/GPUMesh.hpp"
-#include "Engine/Renderer/D3D11Common.hpp"
+#include "Engine/Renderer/D3DCommon.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 void GPUMesh::UpdateVertices( uint vcount , void const* vertexData , uint vertexStride , buffer_attribute_t const* layout )
 {
-	//m_vertices->m_isDirty = true;
-	//m_indices->m_isDirty = true;
 	m_vertexCount = vcount;
 	
 	if ( vcount == 0 )

@@ -59,7 +59,7 @@ enum eBufferFormatType
 
 struct buffer_attribute_t
 {
-	std::string name; 			// used to link to a D3D11 shader
+	std::string name; 			// used to link to a D3D12 shader
 	// uint location; 			// used to link to a GL/Vulkan shader 
 	eBufferFormatType type;		// what data are we describing
 	uint offset; 				// where is it relative to the start of a vertex

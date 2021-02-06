@@ -3,7 +3,7 @@
 
 
 class  RenderContext;
-struct ID3D11Buffer;
+struct ID3D12Buffer;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ private:
 
 public:
 	RenderContext*		m_owner;
-	ID3D11Buffer*		m_handle;
+	ID3D12Buffer*		m_handle;
 	//bool				m_isDirty						= true;
 	std::string			m_debugName;
 

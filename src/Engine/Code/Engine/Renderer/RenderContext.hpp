@@ -7,7 +7,7 @@
 #include "Engine/Primitives/Disc2D.hpp"
 #include "Engine/Primitives/OBB2.hpp"
 #include "Engine/Renderer/Camera.hpp"
-#include "Engine/Renderer/D3D11Utils.hpp"
+#include "Engine/Renderer/D3DUtils.hpp"
 #include "Engine/Renderer/RendererCommon.hpp"
 #include "Engine/Renderer/Shader.hpp"
 #include "Engine/Renderer/Texture.hpp"
@@ -34,13 +34,13 @@ class	Image;
 class	TextureCube;
 class	BitmapFont;
 
-struct	ID3D11Device;
-struct	ID3D11DeviceContext;
+struct	ID3D12Device;
+struct	ID3D12DeviceContext;
 struct	IDXGIDebug;
-struct  ID3D11RasterizerState;
-struct	ID3D11Buffer;
-struct	ID3D11BlendState;
-struct	ID3D11DepthStencilState;
+struct  ID3D12RasterizerState;
+struct	ID3D12Buffer;
+struct	ID3D12BlendState;
+struct	ID3D12DepthStencilState;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -219,7 +219,7 @@ public:
 	void					SetModelMatrix( Mat44 modelmat , Rgba8 color = WHITE );
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-//			D3D11 DEBUG MODULE 
+//			D3D12 DEBUG MODULE 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 	void					CreateDebugModule();
@@ -434,10 +434,10 @@ private:
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 public:
-	ID3D11Device*								m_device												= nullptr;
-	ID3D11DeviceContext*						m_context												= nullptr;					// Immediate context
+	ID3D12Device*								m_device												= nullptr;
+	ID3D12DeviceContext*						m_context												= nullptr;					// Immediate context
 	SwapChain*									m_swapChain												= nullptr;
-	ID3D11DepthStencilState*					m_currentDepthStencilState								= nullptr;
+	ID3D12DepthStencilState*					m_currentDepthStencilState								= nullptr;
 
 	Camera*										m_currentCamera											= nullptr;
 
@@ -449,14 +449,14 @@ public:
 	VertexBuffer*								m_immediateVBO											= nullptr;
 	//IndexBuffer*								m_immediateIBO											= nullptr;
 	GPUMesh*									m_immediateMesh											= nullptr;
-	ID3D11Buffer*								m_lastBoundVBO											= nullptr;
-	ID3D11Buffer*								m_lastBoundIBO											= nullptr;
+	ID3D12Buffer*								m_lastBoundVBO											= nullptr;
+	ID3D12Buffer*								m_lastBoundIBO											= nullptr;
 	Texture*									m_textureTarget											= nullptr;
 
-	ID3D11BlendState*							m_blendStates[eBlendMode::TOTAL_BLEND_MODES];
-	ID3D11RasterizerState*						m_rasterStates[eBlendMode::TOTAL_BLEND_MODES];
-	ID3D11RasterizerState*						m_currentRasterState;
-	ID3D11RasterizerState*						m_transientRaterState;
+	ID3D12BlendState*							m_blendStates[eBlendMode::TOTAL_BLEND_MODES];
+	ID3D12RasterizerState*						m_rasterStates[eBlendMode::TOTAL_BLEND_MODES];
+	ID3D12RasterizerState*						m_currentRasterState;
+	ID3D12RasterizerState*						m_transientRaterState;
 
 	RenderBuffer*								m_frameUBO												= nullptr;
 	RenderBuffer*								m_modelMatrixUBO										= nullptr;

@@ -4,7 +4,7 @@
 #include "Engine/Math/Vec2.hpp"
 #include "Engine/Primitives/AABB2.hpp"
 #include "Engine/Primitives/Frustum.hpp"
-#include "Engine/Renderer/D3D11Utils.hpp"
+#include "Engine/Renderer/D3DUtils.hpp"
 #include "Engine/Renderer/RendererCommon.hpp"
 #include <mutex>
 #include <vector>
