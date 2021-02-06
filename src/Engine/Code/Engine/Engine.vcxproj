@@ -838,6 +838,12 @@
     <ClCompile Include="Primitives\Polygon2D.cpp" />
     <ClCompile Include="Profilling\D3D11PerformanceMarker.cpp" />
     <ClCompile Include="Profilling\D3D12PerformanceMarker.cpp" />
+    <ClCompile Include="RendererDX12\CommandListDX12.cpp" />
+    <ClCompile Include="RendererDX12\CommandQueueDX12.cpp" />
+    <ClCompile Include="RendererDX12\CopyQueueDX12.cpp" />
+    <ClCompile Include="RendererDX12\DirectQueueDX12.cpp" />
+    <ClCompile Include="RendererDX12\DispatchQueueDX12.cpp" />
+    <ClCompile Include="RendererDX12\FenceDX12.cpp" />
     <ClCompile Include="RendererDX12\RenderContextDX12.cpp" />
     <ClCompile Include="Renderer\D3D11Common.cpp" />
     <ClCompile Include="Renderer\D3D11Utils.cpp" />
@@ -1188,6 +1194,13 @@
     <ClInclude Include="Primitives\Polygon2D.hpp" />
     <ClInclude Include="Profilling\D3D11PerformanceMarker.hpp" />
     <ClInclude Include="Profilling\D3D12PerformanceMarker.hpp" />
+    <ClInclude Include="RendererDX12\CommandListDX12.hpp" />
+    <ClInclude Include="RendererDX12\CommandQueueDX12.hpp" />
+    <ClInclude Include="RendererDX12\CopyQueueDX12.hpp" />
+    <ClInclude Include="RendererDX12\D3D12Common.hpp" />
+    <ClInclude Include="RendererDX12\DirectQueueDX12.hpp" />
+    <ClInclude Include="RendererDX12\DispatchQueueDX12.hpp" />
+    <ClInclude Include="RendererDX12\FenceDX12.hpp" />
     <ClInclude Include="RendererDX12\RenderContextDX12.hpp" />
     <ClInclude Include="Renderer\BitmapFont.hpp" />
     <ClInclude Include="Renderer\Camera.hpp" />
