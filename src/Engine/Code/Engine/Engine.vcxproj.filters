@@ -134,6 +134,9 @@
     <Filter Include="ThirdParty\ImGUI\Plot">
       <UniqueIdentifier>{a11a00e2-e778-4a82-8e83-80c098ef9117}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RendererDX12">
+      <UniqueIdentifier>{c10e9ab8-b59a-42ef-9a98-4a749367896b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Rgba8.cpp">
@@ -525,6 +528,9 @@
     </ClCompile>
     <ClCompile Include="Memory\JobSystemWorkerThread.cpp">
       <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\RenderContextDX12.cpp">
+      <Filter>RendererDX12</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -986,6 +992,9 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\ImGUI\implot_internal.h">
       <Filter>ThirdParty\ImGUI\Plot</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\RenderContextDX12.hpp">
+      <Filter>RendererDX12</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

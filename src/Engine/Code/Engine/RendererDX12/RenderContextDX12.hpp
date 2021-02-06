@@ -1,54 +1,48 @@
-﻿#include "Engine/Core/EngineCommon.hpp"
-#include "Engine/RendererDX12/RenderContextDX12.hpp"
-#include "Engine/Time/Time.hpp"
-#include "Game/Game.hpp"
-#include "Game/GameCommon.hpp"
-#include "Game/TheApp.hpp"
+#pragma once
+#include "Engine/Platform/Window.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-extern RenderContextDX12*	g_theRenderer;
-extern TheApp*				g_theApp;
-static  bool				s_areDevconsoleCommandsLoaded = false;
+struct	ID3D12Device;
+struct	ID3D12DeviceContext;
+struct	IDXGIDebug;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-
-Game::Game()
-{
-	InitializeCameras();
-	g_theInput->PushCursorSettings( CursorSettings( ABSOLUTE_MODE , MOUSE_IS_UNLOCKED , true ) );
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-Game::~Game()
-{
-
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-void Game::InitializeCameras()
-{
-	//m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
-	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 0.f ) );
-	//m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-void Game::Update( float deltaSeconds )
-{
 	
-}
+class RenderContextDX12
+{
 
+public:
+	RenderContextDX12() {};
+	~RenderContextDX12();
+
+	void					Startup( Window* window );
+	void					BeginFrame();
+	void					UpdateFrameTime( float deltaSeconds );
+	void					EndFrame();
+	void					Shutdown();
+	
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//			CAMERA METHODS
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
+	void					ClearScreen( const Rgba8& clearColor );											// Clear Color
+	
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//			D3D12 DEBUG MODULE 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void Game::Render() const
-{
-	//g_theRenderer->BeginCamera( m_gameCamera );
-	//g_theRenderer->SetRasterState( FILL_SOLID );
-	//g_theRenderer->EndCamera( m_gameCamera );
-}
+	void					CreateDebugModule();
+	void					DestroyDebugModule();
+	void					ReportLiveObjects();
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
+public:
+	ID3D12Device*								m_device												= nullptr;
+	ID3D12DeviceContext*						m_context												= nullptr;
+	void*										m_debugModule											= nullptr;
+	IDXGIDebug*									m_debug													= nullptr;
+};
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
