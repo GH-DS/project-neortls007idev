@@ -134,6 +134,9 @@
     <Filter Include="ThirdParty\ImGUI\Plot">
       <UniqueIdentifier>{a11a00e2-e778-4a82-8e83-80c098ef9117}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RendererDX12">
+      <UniqueIdentifier>{80ddd930-2292-4a7e-abf9-bdbdf92ceaae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Rgba8.cpp">
@@ -325,9 +328,6 @@
     <ClCompile Include="Primitives\AABB3.cpp">
       <Filter>Primitives</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\D3D11Common.cpp">
-      <Filter>Renderer\Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="Time\Clock.cpp">
       <Filter>Time</Filter>
     </ClCompile>
@@ -348,9 +348,6 @@
     </ClCompile>
     <ClCompile Include="Core\DebugRenderObject.cpp">
       <Filter>Core\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\D3D11Utils.cpp">
-      <Filter>Renderer\Pipeline</Filter>
     </ClCompile>
     <ClCompile Include="Primitives\OBB3.cpp">
       <Filter>Primitives</Filter>
@@ -404,9 +401,6 @@
       <Filter>Core\Vertex</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Material.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\ShaderState.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Core\NamedProperties.cpp">
@@ -525,6 +519,21 @@
     </ClCompile>
     <ClCompile Include="Memory\JobSystemWorkerThread.cpp">
       <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\D3DCommon.cpp">
+      <Filter>Renderer\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\D3DUtils.cpp">
+      <Filter>Renderer\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Profilling\D3D12PerformanceMarker.cpp">
+      <Filter>Profilling</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\ShaderState.cpp">
+      <Filter>Renderer\Pipeline\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\RenderContextDX12.cpp">
+      <Filter>RendererDX12</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -705,9 +714,6 @@
     <ClInclude Include="Renderer\Sampler.hpp">
       <Filter>Renderer\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\D3D11Common.hpp">
-      <Filter>Renderer\Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Core\DirectoryWatcher.hpp">
       <Filter>Core\Experimental</Filter>
     </ClInclude>
@@ -749,9 +755,6 @@
     </ClInclude>
     <ClInclude Include="Core\DebugRenderObject.hpp">
       <Filter>Core\Debug</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D11Utils.hpp">
-      <Filter>Renderer\Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="Primitives\OBB3.hpp">
       <Filter>Primitives</Filter>
@@ -811,9 +814,6 @@
       <Filter>Core\Vertex</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\RendererCommon.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\ShaderState.hpp">
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Core\NamedProperties.hpp">
@@ -986,6 +986,27 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\ImGUI\implot_internal.h">
       <Filter>ThirdParty\ImGUI\Plot</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3DCommon.hpp">
+      <Filter>Renderer\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3DUtils.hpp">
+      <Filter>Renderer\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Profilling\D3D12PerformanceMarker.hpp">
+      <Filter>Profilling</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\ShaderState.hpp">
+      <Filter>Renderer\Pipeline\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\EngineSystemManager.hpp">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\EngineSytemManager.cpp">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\RenderContextDX12.hpp">
+      <Filter>RendererDX12</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

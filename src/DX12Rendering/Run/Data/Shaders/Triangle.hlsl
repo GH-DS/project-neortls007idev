@@ -1,7 +1,7 @@
 // input to the vertex shader - for now, a special input that is the index of the vertex we're drawing
 struct vs_input_t
 {
-	uint vidx : SV_VERTEXID; // SV_* stands for System Variable (ie, built-in by D3D11 and has special meaning)
+	uint vidx : SV_VERTEXID; // SV_* stands for System Variable (ie, built-in by D3D12 and has special meaning)
 							// in this case, is the the index of the vertex coming in.
 };
 

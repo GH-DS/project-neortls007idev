@@ -8,9 +8,6 @@
     <Filter Include="Gameplay">
       <UniqueIdentifier>{79fdbf1c-2233-4c46-93fe-35bb7ee72e7f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Gameplay\Entities">
-      <UniqueIdentifier>{3329ea6d-c86e-48d3-8692-1cbaaabb7222}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Data">
       <UniqueIdentifier>{a912b540-ab14-40cf-a033-7b990fd31a2b}</UniqueIdentifier>
     </Filter>
