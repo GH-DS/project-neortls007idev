@@ -10,7 +10,7 @@ public:
 	~CommandListDX12();
 
 private:
-	ID3D12GraphicsCommandList* m_commandList = nullptr;
+	ID3D12CommandAllocator* m_commandAllocator = nullptr;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

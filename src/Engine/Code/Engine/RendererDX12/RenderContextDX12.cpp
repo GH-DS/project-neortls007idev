@@ -28,6 +28,8 @@
 
 #include <d3d12sdklayers.h>
 #include <dxgidebug.h>
+#include "Engine/RendererDX12/CommandQueueDX12.hpp"
+#include <winerror.h>
 
 #define DX_SAFE_RELEASE( ptr ) if ( nullptr != ptr ) { ptr->Release(); ptr = nullptr; }
 
@@ -115,6 +117,7 @@ void RenderContextDX12::BeginFrame()
 
 void RenderContextDX12::UpdateFrameTime( float deltaSeconds )
 {
+	UNUSED( deltaSeconds );
 	// FrameDataT frameData;
 	// frameData.m_systemTime = ( float ) GetCurrentTimeSeconds();
 	// frameData.m_systemDeltaTime = deltaSeconds;
@@ -203,6 +206,45 @@ void RenderContextDX12::ReportLiveObjects()
 	{
 		m_debug->ReportLiveObjects( DXGI_DEBUG_ALL , DXGI_DEBUG_RLO_ALL );
 	}
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+CommandQueueDX12* RenderContextDX12::CreateCommandQueue( ID3D12Device2* device , eDX12CommandListType type )
+{
+	CommandQueueDX12* newCommandQueue = new CommandQueueDX12( device , type );
+	return newCommandQueue;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+bool RenderContextDX12::CheckTearingSupport()
+{
+	BOOL allowTearing = FALSE;
+
+	// Rather than create the DXGI 1.5 factory interface directly, we create the
+	// DXGI 1.4 interface and query for the 1.5 interface. This is to enable the 
+	// graphics debugging tools which will not support the 1.5 factory interface 
+	// until a future update.
+/*
+// 	IDXGIFactory4* factory4 = nullptr;
+// 	if ( SUCCEEDED( CreateDXGIFactory1( IID_PPV_ARGS( &factory4 ) ) ) )
+// 	{
+// 		IDXGIFactory5* factory5 = nullptr;
+// 
+// 		if ( SUCCEEDED( factory4.As( &factory5 ) ) )
+// 		{
+// 			if ( FAILED( factory5->CheckFeatureSupport(
+// 				DXGI_FEATURE_PRESENT_ALLOW_TEARING ,
+// 				&allowTearing , sizeof( allowTearing ) ) ) )
+// 			{
+// 				allowTearing = FALSE;
+// 			}
+// 		}
+// 	}
+*/
+
+	return allowTearing == TRUE;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

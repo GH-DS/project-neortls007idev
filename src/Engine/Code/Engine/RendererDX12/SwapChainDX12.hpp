@@ -1,26 +1,25 @@
 #pragma once
 
-class  RenderContext;
-struct IDXGISwapChain;
-
-class Texture;
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
+class	RenderContextDX12;
+struct  ID3D12Resource;
+struct  IDXGISwapChain4;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-class SwapChain
+class SwapChainDX12
 {
 public:
-	SwapChain( RenderContext* owner, IDXGISwapChain* handle );
-	~SwapChain();
+	SwapChainDX12( RenderContextDX12* owner, IDXGISwapChain4* handle );
+	~SwapChainDX12();
 
 	void Present( int vsync = 0 );
-	Texture* GetBackBuffer();
-
-private:
-	RenderContext*  m_owner  = nullptr; // creator render context
-	IDXGISwapChain* m_handle = nullptr; // D3D11 created pointer, what we use when calling DXD311
 	
-	Texture*		m_backBuffer = nullptr;
+private:
+	RenderContextDX12*		m_owner			= nullptr; // creator render context
+	IDXGISwapChain4*		m_handle		= nullptr; // D3D11 created pointer, what we use when calling DXD311
+	ID3D12Resource*			m_backbuffer	= nullptr;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

@@ -3,14 +3,14 @@
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	
-class CommandListDX12
+class DescriptorHeapDX12
 {
 public:
-	CommandListDX12();
-	~CommandListDX12();
+	DescriptorHeapDX12();
+	~DescriptorHeapDX12();
 
 private:
-	ID3D12GraphicsCommandList* m_commandList = nullptr;
+	ID3D12DescriptorHeap* m_commandAllocator = nullptr;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

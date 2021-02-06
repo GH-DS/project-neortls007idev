@@ -556,6 +556,18 @@
     <ClCompile Include="RendererDX12\DirectQueueDX12.cpp">
       <Filter>RendererDX12\D3D 12 Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="RendererDX12\CommandAllocatorDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\DescriptorHeapDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\SwapChainDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\D3D12Utils.cpp">
+      <Filter>RendererDX12</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Rgba8.hpp">
@@ -1043,6 +1055,18 @@
     </ClInclude>
     <ClInclude Include="RendererDX12\DirectQueueDX12.hpp">
       <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\CommandAllocatorDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\DescriptorHeapDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\SwapChainDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\D3D12Utils.hpp">
+      <Filter>RendererDX12</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
