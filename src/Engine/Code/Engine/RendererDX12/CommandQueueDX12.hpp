@@ -4,16 +4,23 @@
 #include "Engine/RendererDX12/D3D12Utils.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
+
+class  RenderContextDX12;
+class  FenceDX12;
+struct ID3D12CommandQueue;
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
 	
 class CommandQueueDX12
 {
 public:
-	CommandQueueDX12( ID3D12Device2* device , eDX12CommandListType type );
+	CommandQueueDX12( RenderContextDX12* owner , eDX12CommandListType type );
 	~CommandQueueDX12();
 
 	void ExecuteCommandList( CommandListDX12 list );
-private:
-	FenceDX12				m_fence;
+public:
+	RenderContextDX12*		m_owner;
+	FenceDX12*				m_fence;
 	ID3D12CommandQueue*		m_commandQueue = nullptr;
 };
 

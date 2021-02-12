@@ -3,14 +3,21 @@
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	
+struct ID3D12GraphicsCommandList;
+class  RenderContextDX12;
+class  CommandAllocatorDX12;
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
 class CommandListDX12
 {
 public:
-	CommandListDX12();
+	CommandListDX12( RenderContextDX12* owner , CommandAllocatorDX12* commandAllocator , D3D12_COMMAND_LIST_TYPE type );
 	~CommandListDX12();
 
-private:
-	ID3D12GraphicsCommandList* m_commandList = nullptr;
+public:
+	RenderContextDX12*			m_owner			= nullptr;
+	ID3D12GraphicsCommandList*	m_commandList	= nullptr;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

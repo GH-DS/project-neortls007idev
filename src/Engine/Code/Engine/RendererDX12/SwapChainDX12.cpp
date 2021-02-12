@@ -24,6 +24,7 @@ SwapChainDX12::~SwapChainDX12()
 
 void SwapChainDX12::Present( int vsync )
 {
+	UNUSED( vsync );
 	// m_handle->Present( vsync , 0 );
 }
 

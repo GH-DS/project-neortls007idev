@@ -28,8 +28,6 @@ D3D12_COMMAND_LIST_TYPE GetD3D12CommandListType( eDX12CommandListType commandLis
 	case DX12_COMMAND_LIST_TYPE_VIDEO_ENCODE:
 						return D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE;
 		break;
-	default:
-		break;
 	}
 }
 
