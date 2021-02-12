@@ -80,6 +80,9 @@ public:
 	bool										m_hasTearingSupport										= false;
 
 	const uint8_t								m_numBackBufferFrames									= 3;
+	uint64_t									m_frameFenceValues[ 3 ]									= {};
+	uint64_t									m_fenceValue											= 0;
+
 	ID3D12Resource*								t_backBuffers[ 3 ];
 	IDXGISwapChain4*							t_swapchain												= nullptr;
 	DescriptorHeapDX12*							m_RTVDescriptorHeap										= nullptr;

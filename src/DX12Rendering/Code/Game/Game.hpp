@@ -17,8 +17,9 @@ public:
 			void Update( float deltaSeconds );
 			void Render() const;
 
-private:
-
+public:
+	Rgba8 m_clearScreenColor	= RED;
+	float m_colorLerpTimer		= 0.f;
 
 private:
 	//mutable Camera				m_gameCamera;

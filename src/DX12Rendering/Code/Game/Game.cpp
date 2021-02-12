@@ -17,6 +17,8 @@ Game::Game()
 {
 	InitializeCameras();
 	g_theInput->PushCursorSettings( CursorSettings( ABSOLUTE_MODE , MOUSE_IS_UNLOCKED , true ) );
+	m_clearScreenColor = RED;
+	m_colorLerpTimer = 0.f;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -39,14 +41,30 @@ void Game::InitializeCameras()
 
 void Game::Update( float deltaSeconds )
 {
-	
+	if ( ( m_colorLerpTimer >= 0.f ) && ( m_colorLerpTimer <= 3.f ) )
+	{
+		m_clearScreenColor.LerpColorOverTime( RED , GREEN , 3.f , m_colorLerpTimer );
+	}
+	else if ( ( m_colorLerpTimer >= 3.f ) && ( m_colorLerpTimer <= 6.f ) )
+	{
+		m_clearScreenColor.LerpColorOverTime( GREEN , BLUE , 6.f , m_colorLerpTimer );
+	}
+	else if ( ( m_colorLerpTimer >= 6.f ) && ( m_colorLerpTimer < 9.f ) )
+	{
+		m_clearScreenColor.LerpColorOverTime( BLUE , RED , 9.f , m_colorLerpTimer );
+	}
+	else
+	{
+		m_colorLerpTimer = 0.f;
+	}
+	m_colorLerpTimer += deltaSeconds;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 void Game::Render() const
 {
-	g_theRenderer->ClearScreen( RED );
+	g_theRenderer->ClearScreen( m_clearScreenColor );
 	//g_theRenderer->BeginCamera( m_gameCamera );
 	//g_theRenderer->SetRasterState( FILL_SOLID );
 	//g_theRenderer->EndCamera( m_gameCamera );

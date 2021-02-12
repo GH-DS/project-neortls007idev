@@ -274,7 +274,7 @@ void RenderContextDX12::UpdateFrameTime( float deltaSeconds )
 void RenderContextDX12::EndFrame()
 {
 	Present();
-	//Flush();
+	Flush( m_fenceValue );
 	//m_swapChain->Present();
 }
 
@@ -380,7 +380,8 @@ void RenderContextDX12::Present()
 	};
 	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
 
-//	g_FrameFenceValues[ m_currentBackBufferIndex ] = Signal( g_CommandQueue , g_Fence , g_FenceValue );
+	m_frameFenceValues[ m_currentBackBufferIndex ] = m_commandQueue->SignalFence( m_fenceValue );
+	//Signal( g_CommandQueue , g_Fence , g_FenceValue );
 
 	UINT syncInterval = m_isVsyncEnabled ? 1 : 0;
 	UINT presentFlags = m_hasTearingSupport && !m_isVsyncEnabled ? DXGI_PRESENT_ALLOW_TEARING : 0;
@@ -388,6 +389,8 @@ void RenderContextDX12::Present()
 
 	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
 
+	m_commandQueue->m_fence->WaitForFenceValue( m_frameFenceValues[ m_currentBackBufferIndex ] , ( void* ) m_fenceEvent );
+	//m_commandQueue->m_fence->WaitForFenceValue()
 //	WaitForFenceValue( g_Fence , g_FrameFenceValues[ t_swapchain ] , m_fenceEvent );
 
 }
