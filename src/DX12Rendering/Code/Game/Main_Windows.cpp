@@ -20,7 +20,7 @@ extern InputSystem*			g_theInput;
 
 //-----------------------------------------------------------------------------------------------
 
-const	char*	APP_NAME		= "FPS";
+const	char*	APP_NAME		= "DFS 2: - Rendering with DirectX 12 ( C:29 Rahul Gupta)";
 
 //-----------------------------------------------------------------------------------------------
 // Processes all Windows messages (WM_xxx) for this app that have queued up since last frame.
