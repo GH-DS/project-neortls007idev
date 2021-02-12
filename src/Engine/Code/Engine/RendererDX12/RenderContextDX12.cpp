@@ -82,12 +82,12 @@ RenderContextDX12::~RenderContextDX12()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::Startup( Window* window )
+HRESULT RenderContextDX12::Startup( Window* window )
 {
 	EnableDebugLayer();
-	
-	CheckGraphicsAdapters( false );
-	CreateDevice();
+	HRESULT resourceInit;
+	resourceInit = CheckGraphicsAdapters( false );
+	resourceInit |= CreateDevice();
 
 #if defined( RENDER_DEBUG ) || defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
 	CreateDebugModule();
@@ -96,7 +96,7 @@ void RenderContextDX12::Startup( Window* window )
 
 	m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
 	
-	CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
+	resourceInit |= CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
 	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
  	
 	m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
@@ -112,41 +112,12 @@ void RenderContextDX12::Startup( Window* window )
 	
 	CreateFenceEventHandle();
 
-// 	// Make sure the command queue has finished all commands before closing.
-//	Flush( g_CommandQueue , g_Fence , g_FenceValue , g_FenceEvent );
-// 
-// 	::CloseHandle( g_FenceEvent );
-
-
-/*
-	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
-	memset( &swapChainDesc , 0 , sizeof( swapChainDesc ) );
-	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_BACK_BUFFER;
-
-	swapChainDesc.BufferCount = 2;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // on swap, the old buffer is discarded
-	swapChainDesc.Flags = 0; // additional flags - see docs.  Used in special cases like for video buffers
-
-	// how swap chain is to be used
-	HWND hwnd = ( HWND ) window->m_hwnd;
-	swapChainDesc.OutputWindow = hwnd; // HWND for the window to be used
-	swapChainDesc.SampleDesc.Count = 1; // how many samples per pixel (1 so no MSAA)
-										 // note, if we're doing MSAA, we'll do it on a secondary target
-
-	// describe the buffer
-	swapChainDesc.Windowed = TRUE;                                    // windowed/full-screen mode
-	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color RGBA8 color
-	swapChainDesc.BufferDesc.Width = window->GetClientWidth();
-	swapChainDesc.BufferDesc.Height = window->GetClientHeight();
-	// save data as member variable when window is created.
-
-	// create
-*/
+	return resourceInit;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false */ )
+HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false */ )
 {
 	IDXGIFactory4* dxgiFactory = nullptr;
 	UINT createFactoryFlags = 0;
@@ -154,9 +125,10 @@ void RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false */ 
 #if defined ( _DEBUG ) || ( _DEBUG_PROFILE ) || ( _FASTBREAK ) ||  defined ( _FASTBREAK_PROFILE )
 	createFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
-
-	GUARANTEE_OR_DIE( CreateDXGIFactory2( createFactoryFlags , IID_PPV_ARGS( &dxgiFactory ) ) == S_OK , "DXGFI FACTORY CREATION FOR DEVICE ENUMERATION FAILED" );
-
+	HRESULT result;
+	result = CreateDXGIFactory2( createFactoryFlags , IID_PPV_ARGS( &dxgiFactory ) );
+	GUARANTEE_OR_DIE( result == S_OK , "DXGFI FACTORY CREATION FOR DEVICE ENUMERATION FAILED" );
+	
 	//--------------------------------------------------------------------------------
 	//					NOTES
 	//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -167,8 +139,11 @@ void RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false */ 
 	
 	if ( useWARPAdapter )
 	{
-		GUARANTEE_OR_DIE( dxgiFactory->EnumWarpAdapter( IID_PPV_ARGS( &warpAdapter ) ) == S_OK , "WARP ADAPTER FAILED DURING DEVICE ENUMERATION" );
- 		GUARANTEE_OR_DIE( warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) ) == S_OK , "WARP ADAPTER ASSIGNMENT FAILED");
+		result |= dxgiFactory->EnumWarpAdapter( IID_PPV_ARGS( &warpAdapter ) );
+		GUARANTEE_OR_DIE( result == S_OK , "WARP ADAPTER FAILED DURING DEVICE ENUMERATION" );
+
+ 		result |= warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) );
+ 		GUARANTEE_OR_DIE( result == S_OK , "WARP ADAPTER ASSIGNMENT FAILED");
 	}
 	else
 	{
@@ -188,20 +163,23 @@ void RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false */ 
 			{
 				maxDedicatedVideoMemory = dxgiAdapterDesc1.DedicatedVideoMemory;
 
+				result |= warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) );
 				GUARANTEE_OR_DIE( warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) ) == S_OK , "HARDWARE ADAPTER ASSIGNMENT FAILED" );
 			}
 		}
 	}
 	
 	DX_SAFE_RELEASE( dxgiFactory );
+	return result;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::CreateDevice()
+HRESULT RenderContextDX12::CreateDevice()
 {
 	HRESULT deviceCreation = D3D12CreateDevice( m_deviceAdapter , D3D_FEATURE_LEVEL_12_1 , IID_PPV_ARGS( &m_device ) );
 	GUARANTEE_OR_DIE( deviceCreation == S_OK , "D3D12 DEVICE CREATION FAILED" );
+	return deviceCreation;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -282,6 +260,9 @@ void RenderContextDX12::EndFrame()
 
 void RenderContextDX12::Shutdown()
 {
+	Flush( m_fenceValue );
+	::CloseHandle( m_fenceEvent );
+
 	SAFE_RELEASE_POINTER( m_commandList );
 	SAFE_RELEASE_POINTER( m_commandQueue );
 	
@@ -307,7 +288,7 @@ void RenderContextDX12::Shutdown()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount )
+HRESULT RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount )
 {
 	IDXGIFactory4* dxgiFactory4 = nullptr;
 	UINT createFactoryFlags = 0;
@@ -315,8 +296,8 @@ void RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQu
 #if defined(_DEBUG)
 	createFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
-
-	GUARANTEE_OR_DIE( CreateDXGIFactory2( createFactoryFlags , IID_PPV_ARGS( &dxgiFactory4 ) ) == S_OK , "Factory Creation for SWAP CHAIN FAILED" );
+	HRESULT swapchain = CreateDXGIFactory2( createFactoryFlags , IID_PPV_ARGS( &dxgiFactory4 ) );
+	GUARANTEE_OR_DIE( swapchain == S_OK , "Factory Creation for SWAP CHAIN FAILED" );
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 	swapChainDesc.Width = width;
@@ -333,27 +314,33 @@ void RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQu
 	swapChainDesc.Flags = CheckTearingSupport() ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 	IDXGISwapChain1* swapChain1 = nullptr;
-	GUARANTEE_OR_DIE( dxgiFactory4->CreateSwapChainForHwnd(
+	swapchain |= dxgiFactory4->CreateSwapChainForHwnd(
 		commandQueue->m_commandQueue ,
 		hWnd ,
 		&swapChainDesc ,
 		nullptr ,
 		nullptr ,
-		&swapChain1 ) == S_OK , "SWAP CHAIN CREATION FAILED" );
+		&swapChain1 );
+		
+	GUARANTEE_OR_DIE( swapchain == S_OK , "SWAP CHAIN CREATION FAILED" );
 
 	// Disable the Alt+Enter fullscreen toggle feature. Switching to fullscreen
 	// will be handled manually.
 	//GUARANTEE_OR_DIE( dxgiFactory4->MakeWindowAssociation( hWnd , DXGI_MWA_NO_ALT_ENTER ) , "DISABLING MAUNAL OVERRIDE on Window Scaling FAILED" );
+	
+	swapchain = swapChain1->QueryInterface( IID_PPV_ARGS( &t_swapchain ) );
+	GUARANTEE_OR_DIE( swapchain == S_OK , "SWAP CHAIN ASSIGNMENT FAILED" );
 
-	GUARANTEE_OR_DIE( swapChain1->QueryInterface( IID_PPV_ARGS( &t_swapchain ) ) == S_OK , "SWAP CHAIN ASSIGNMENT FAILED" );
+	return swapchain;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::CreateFenceEventHandle()
+void* RenderContextDX12::CreateFenceEventHandle()
 {
 	m_fenceEvent = ::CreateEvent( NULL , FALSE , FALSE , NULL );
 	ASSERT_OR_DIE( m_fenceEvent != nullptr , "FAILED to Create FENCE EVENT" );
+	return ( void* ) m_fenceEvent;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -390,9 +377,6 @@ void RenderContextDX12::Present()
 	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
 
 	m_commandQueue->m_fence->WaitForFenceValue( m_frameFenceValues[ m_currentBackBufferIndex ] , ( void* ) m_fenceEvent );
-	//m_commandQueue->m_fence->WaitForFenceValue()
-//	WaitForFenceValue( g_Fence , g_FrameFenceValues[ t_swapchain ] , m_fenceEvent );
-
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -401,7 +385,6 @@ void RenderContextDX12::Flush( uint64_t& fenceValue )
 {
 	uint64_t fenceValueForSignal = m_commandQueue->SignalFence( fenceValue );
 	m_commandQueue->m_fence->WaitForFenceValue( fenceValueForSignal , reinterpret_cast< void* >( m_fenceEvent ) );
-	//uint64_t fenceValueForSignal = Signal
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -410,7 +393,7 @@ void RenderContextDX12::Flush( uint64_t& fenceValue )
 void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 {
 	auto commandAllocator = m_commandAllocators[ m_currentBackBufferIndex ];
-	//auto backBuffer = t_backBuffers[ m_currentBackBufferIndex ];
+	
 	ID3D12Resource* backBuffer = nullptr;
 	t_swapchain->GetBuffer( m_currentBackBufferIndex , IID_PPV_ARGS( &backBuffer ) );
 
@@ -438,7 +421,7 @@ void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 
 	D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-	rtv.ptr += ( m_RTVDescriptorSize * ( uint ) m_currentBackBufferIndex );
+	rtv.ptr += ( ( UINT ) m_RTVDescriptorSize * ( UINT ) m_currentBackBufferIndex );
 	
 	m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
 }

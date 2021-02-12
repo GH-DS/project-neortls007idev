@@ -30,17 +30,17 @@ public:
 	RenderContextDX12() {};
 	~RenderContextDX12();
 
-	void					Startup( Window* window );
-	void					CheckGraphicsAdapters( bool useWARPAdapter = false );
-	void					CreateDevice();
+	HRESULT					Startup( Window* window );
+	HRESULT					CheckGraphicsAdapters( bool useWARPAdapter = false );
+	HRESULT					CreateDevice();
 	void					CreateInfoQueue();
 	void					BeginFrame();
 	void					UpdateFrameTime( float deltaSeconds );
 	void					EndFrame();
 	void					Shutdown();
 	
-	void					CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount );
-	void					CreateFenceEventHandle();
+	HRESULT					CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount );
+	void*					CreateFenceEventHandle();
 	void					Present();
 	void					Flush( uint64_t& fenceValue );
 
