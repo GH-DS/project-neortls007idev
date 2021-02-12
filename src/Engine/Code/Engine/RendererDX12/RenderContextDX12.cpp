@@ -69,6 +69,30 @@ extern	D3D12PerformanceMarker* g_D3D12PerfMarker;
 	
 RenderContextDX12::~RenderContextDX12()
 {
+	//	Flush( m_fenceValue );
+//	::CloseHandle( m_fenceEvent );
+
+	SAFE_RELEASE_POINTER( m_commandList );
+	SAFE_RELEASE_POINTER( m_commandQueue );
+
+	for ( int index = 0; index < 3; index++ )
+	{
+		SAFE_RELEASE_POINTER( m_commandAllocators[ index ] );
+	}
+
+	SAFE_RELEASE_POINTER( m_RTVDescriptorHeap );
+
+	for ( int index = 0; index < 3; index++ )
+	{
+		DX_SAFE_RELEASE( t_backBuffers[ index ] );
+	}
+	DX_SAFE_RELEASE( t_swapchain );
+
+//	DX_SAFE_RELEASE( m_infoQueue );
+//	DX_SAFE_RELEASE( m_dx12DebugModule );
+//	DX_SAFE_RELEASE( m_debug );
+	DX_SAFE_RELEASE( m_deviceAdapter );
+	DX_SAFE_RELEASE( m_device );
 //	DX_SAFE_RELEASE( m_context );
 //	DX_SAFE_RELEASE( m_device );
 
@@ -90,27 +114,27 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	resourceInit |= CreateDevice();
 
 #if defined( RENDER_DEBUG ) || defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
-	CreateDebugModule();
-	CreateInfoQueue();
+//	CreateDebugModule();
+//	CreateInfoQueue();
 #endif
 
-	m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
-	
-	resourceInit |= CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
-	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
- 	
-	m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
-	m_RTVDescriptorSize = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
- 
- 	UpdateRenderTargetViews();
-
-	for ( int index = 0; index < m_numBackBufferFrames; ++index )
-	{
-		m_commandAllocators[ index ] = new CommandAllocatorDX12( this , D3D12_COMMAND_LIST_TYPE_DIRECT );
-	}
-	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , D3D12_COMMAND_LIST_TYPE_DIRECT );
-	
-	CreateFenceEventHandle();
+	//m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
+	//
+	//resourceInit |= CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
+	//m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
+ 	//
+	//m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
+	//m_RTVDescriptorSize = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
+ 	//
+ 	//UpdateRenderTargetViews();
+	//
+	//for ( int index = 0; index < m_numBackBufferFrames; ++index )
+	//{
+	//	m_commandAllocators[ index ] = new CommandAllocatorDX12( this , D3D12_COMMAND_LIST_TYPE_DIRECT );
+	//}
+	//m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , D3D12_COMMAND_LIST_TYPE_DIRECT );
+	//
+	//CreateFenceEventHandle();
 
 	return resourceInit;
 }
@@ -177,7 +201,7 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 
 HRESULT RenderContextDX12::CreateDevice()
 {
-	HRESULT deviceCreation = D3D12CreateDevice( NULL , D3D_FEATURE_LEVEL_12_1 , _uuidof( ID3D12Device2 ) , ( void** ) &m_device );
+	HRESULT deviceCreation = D3D12CreateDevice( NULL , D3D_FEATURE_LEVEL_12_1 , _uuidof( ID3D12Device ) , ( void** ) &m_device );
 	GUARANTEE_OR_DIE( deviceCreation == S_OK , "D3D12 DEVICE CREATION FAILED" );
 	return deviceCreation;
 }
@@ -251,8 +275,8 @@ void RenderContextDX12::UpdateFrameTime( float deltaSeconds )
 
 void RenderContextDX12::EndFrame()
 {
-	Present();
-	Flush( m_fenceValue );
+//	Present();
+//	Flush( m_fenceValue );
 	//m_swapChain->Present();
 }
 
@@ -260,30 +284,7 @@ void RenderContextDX12::EndFrame()
 
 void RenderContextDX12::Shutdown()
 {
-	Flush( m_fenceValue );
-	::CloseHandle( m_fenceEvent );
 
-	SAFE_RELEASE_POINTER( m_commandList );
-	SAFE_RELEASE_POINTER( m_commandQueue );
-	
-	for ( int index = 0; index < 3; index++ )
-	{
-		SAFE_RELEASE_POINTER( m_commandAllocators[ index ] );
-	}
-
-	SAFE_RELEASE_POINTER( m_RTVDescriptorHeap );
-
-	for( int index = 0 ; index < 3 ; index++ )
-	{
-		DX_SAFE_RELEASE( t_backBuffers[ index ] );
-	}
-	DX_SAFE_RELEASE( t_swapchain );
-	
-	DX_SAFE_RELEASE( m_infoQueue );
-	DX_SAFE_RELEASE( m_dx12DebugModule );
-	DX_SAFE_RELEASE( m_debug );
-	DX_SAFE_RELEASE( m_deviceAdapter );
-	DX_SAFE_RELEASE( m_device );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

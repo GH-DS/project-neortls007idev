@@ -5,7 +5,6 @@
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-struct  ID3D12Device2;
 struct  ID3D12Resource;
 struct  IDXGISwapChain4;
 struct	ID3D12Device;
@@ -69,7 +68,7 @@ public:
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	
 public:
-	ID3D12Device2*								m_device												= nullptr;
+	ID3D12Device*								m_device												= nullptr;
 	ID3D12DeviceContext*						m_context												= nullptr;
 	void*										m_debugModule											= nullptr;
 	IDXGIDebug*									m_debug													= nullptr;
