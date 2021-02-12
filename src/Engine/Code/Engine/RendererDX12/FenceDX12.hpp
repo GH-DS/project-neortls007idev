@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -19,10 +20,14 @@ public:
 	FenceDX12( CommandQueueDX12* owner , RenderContextDX12* deviceOwner );
 	~FenceDX12();
 
-	bool IsFenceComplete();					// Check to see if the fence's completed value has been reached.
-	void WaitForFenceValue( int value );	// Stall the CPU thread until the fence value has been reached.
-	void Signal();							// Insert a fence value into the command queue. The fence used to signal the command queue will have it's completed value set when that value is reached in the command queue.
-	void Render();							//  Render a frame. Do not move on to the next frame until that frame's previous fence value has been reached.
+	bool IsFenceComplete();											// Check to see if the fence's completed value has been reached.
+	
+	// Stall the CPU thread until the fence value has been reached.
+	// random Max value since std::chrono::milliseconds::max() throws errors.
+
+	void WaitForFenceValue( uint64_t fenceValue , void* fenceEvent , std::chrono::milliseconds duration = std::chrono::milliseconds( 2147483647 ) );
+	void Signal();													// Insert a fence value into the command queue. The fence used to signal the command queue will have it's completed value set when that value is reached in the command queue.
+	void Render();													//  Render a frame. Do not move on to the next frame until that frame's previous fence value has been reached.
 
 public:
 	CommandQueueDX12*	m_ownerQueue	= nullptr;

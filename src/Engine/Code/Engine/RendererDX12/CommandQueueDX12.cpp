@@ -32,4 +32,23 @@ CommandQueueDX12::~CommandQueueDX12()
 	m_owner = nullptr;
 }
 
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void CommandQueueDX12::ExecuteCommandLists( UINT NumCommandLists , CommandListDX12* const* commandLists )
+{
+	UNUSED( NumCommandLists );
+	UNUSED( commandLists );
+//	m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+uint64_t CommandQueueDX12::SignalFence( uint64_t& fenceValue )
+{
+	uint64_t fenceValueForSignal = ++fenceValue;
+	m_commandQueue->Signal( m_fence->m_fence , fenceValueForSignal );
+
+	return fenceValueForSignal;
+}
+
 //-------------------------------------------------------------------------------------------------------------------------------------------- 

@@ -41,7 +41,8 @@ public:
 	
 	void					CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount );
 	void					CreateFenceEventHandle();
-	void					Flush();
+	void					Present();
+	void					Flush( uint64_t& fenceValue );
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //			CAMERA METHODS
@@ -82,9 +83,9 @@ public:
 	ID3D12Resource*								t_backBuffers[ 3 ];
 	IDXGISwapChain4*							t_swapchain												= nullptr;
 	DescriptorHeapDX12*							m_RTVDescriptorHeap										= nullptr;
-	uint8_t										m_RTVDescriptorSize										= 0;
+	UINT										m_RTVDescriptorSize										= 0;
 
-	DirectQueueDX12*							m_directCommandQueue									= nullptr;
+//	DirectQueueDX12*							m_directCommandQueue									= nullptr;
 	CommandQueueDX12*							m_commandQueue											= nullptr;
 	uint8_t										m_currentBackBufferIndex								= 0;
 

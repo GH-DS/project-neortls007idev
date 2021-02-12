@@ -17,7 +17,9 @@ public:
 	CommandQueueDX12( RenderContextDX12* owner , eDX12CommandListType type );
 	~CommandQueueDX12();
 
-	void ExecuteCommandList( CommandListDX12 list );
+	void		ExecuteCommandLists( UINT NumCommandLists , CommandListDX12* const* commandLists );
+	uint64_t	SignalFence( uint64_t& fenceValue );
+
 public:
 	RenderContextDX12*		m_owner;
 	FenceDX12*				m_fence;

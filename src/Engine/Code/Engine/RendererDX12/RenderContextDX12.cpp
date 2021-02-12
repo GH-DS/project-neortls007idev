@@ -88,14 +88,19 @@ void RenderContextDX12::Startup( Window* window )
 	
 	CheckGraphicsAdapters( false );
 	CreateDevice();
-	
+
+#if defined( RENDER_DEBUG ) || defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
+	CreateDebugModule();
+	CreateInfoQueue();
+#endif
+
 	m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
 	
 	CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
 	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
  	
 	m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
-	m_RTVDescriptorSize = ( uint8_t ) m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
+	m_RTVDescriptorSize = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
  
  	UpdateRenderTargetViews();
 
@@ -104,18 +109,15 @@ void RenderContextDX12::Startup( Window* window )
 		m_commandAllocators[ index ] = new CommandAllocatorDX12( this , D3D12_COMMAND_LIST_TYPE_DIRECT );
 	}
 	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , D3D12_COMMAND_LIST_TYPE_DIRECT );
-		
+	
 	CreateFenceEventHandle();
 
 // 	// Make sure the command queue has finished all commands before closing.
-// 	Flush( g_CommandQueue , g_Fence , g_FenceValue , g_FenceEvent );
+//	Flush( g_CommandQueue , g_Fence , g_FenceValue , g_FenceEvent );
 // 
 // 	::CloseHandle( g_FenceEvent );
 
-#if defined( RENDER_DEBUG ) || defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
-	CreateDebugModule();
-	CreateInfoQueue();
-#endif
+
 /*
 	DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
 	memset( &swapChainDesc , 0 , sizeof( swapChainDesc ) );
@@ -150,7 +152,7 @@ void RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false */ 
 	UINT createFactoryFlags = 0;
 
 #if defined ( _DEBUG ) || ( _DEBUG_PROFILE ) || ( _FASTBREAK ) ||  defined ( _FASTBREAK_PROFILE )
-	createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+	createFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
 
 	GUARANTEE_OR_DIE( CreateDXGIFactory2( createFactoryFlags , IID_PPV_ARGS( &dxgiFactory ) ) == S_OK , "DXGFI FACTORY CREATION FOR DEVICE ENUMERATION FAILED" );
@@ -271,6 +273,8 @@ void RenderContextDX12::UpdateFrameTime( float deltaSeconds )
 
 void RenderContextDX12::EndFrame()
 {
+	Present();
+	//Flush();
 	//m_swapChain->Present();
 }
 
@@ -278,6 +282,25 @@ void RenderContextDX12::EndFrame()
 
 void RenderContextDX12::Shutdown()
 {
+	SAFE_RELEASE_POINTER( m_commandList );
+	SAFE_RELEASE_POINTER( m_commandQueue );
+	
+	for ( int index = 0; index < 3; index++ )
+	{
+		SAFE_RELEASE_POINTER( m_commandAllocators[ index ] );
+	}
+
+	SAFE_RELEASE_POINTER( m_RTVDescriptorHeap );
+
+	for( int index = 0 ; index < 3 ; index++ )
+	{
+		DX_SAFE_RELEASE( t_backBuffers[ index ] );
+	}
+	DX_SAFE_RELEASE( t_swapchain );
+	
+	DX_SAFE_RELEASE( m_infoQueue );
+	DX_SAFE_RELEASE( m_dx12DebugModule );
+	DX_SAFE_RELEASE( m_debug );
 	DX_SAFE_RELEASE( m_deviceAdapter );
 	DX_SAFE_RELEASE( m_device );
 }
@@ -330,13 +353,51 @@ void RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQu
 void RenderContextDX12::CreateFenceEventHandle()
 {
 	m_fenceEvent = ::CreateEvent( NULL , FALSE , FALSE , NULL );
-	ASSERT_OR_DIE( m_fenceEvent == nullptr , "FAILED to Create FENCE EVENT" );
+	ASSERT_OR_DIE( m_fenceEvent != nullptr , "FAILED to Create FENCE EVENT" );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::Flush()
+void RenderContextDX12::Present()
 {
+	auto backBuffer = t_backBuffers[ m_currentBackBufferIndex ];
+
+	D3D12_RESOURCE_BARRIER barrier;
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = backBuffer;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+	
+	m_commandList->m_commandList->ResourceBarrier( 1 , &barrier );
+
+	m_commandList->m_commandList->Close();
+
+	ID3D12CommandList* const commandLists[] = {
+		m_commandList->m_commandList
+	};
+	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
+
+//	g_FrameFenceValues[ m_currentBackBufferIndex ] = Signal( g_CommandQueue , g_Fence , g_FenceValue );
+
+	UINT syncInterval = m_isVsyncEnabled ? 1 : 0;
+	UINT presentFlags = m_hasTearingSupport && !m_isVsyncEnabled ? DXGI_PRESENT_ALLOW_TEARING : 0;
+	t_swapchain->Present( syncInterval , presentFlags );
+
+	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
+
+//	WaitForFenceValue( g_Fence , g_FrameFenceValues[ t_swapchain ] , m_fenceEvent );
+
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::Flush( uint64_t& fenceValue )
+{
+	uint64_t fenceValueForSignal = m_commandQueue->SignalFence( fenceValue );
+	m_commandQueue->m_fence->WaitForFenceValue( fenceValueForSignal , reinterpret_cast< void* >( m_fenceEvent ) );
 	//uint64_t fenceValueForSignal = Signal
 }
 
@@ -345,6 +406,14 @@ void RenderContextDX12::Flush()
 
 void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 {
+	auto commandAllocator = m_commandAllocators[ m_currentBackBufferIndex ];
+	//auto backBuffer = t_backBuffers[ m_currentBackBufferIndex ];
+	ID3D12Resource* backBuffer = nullptr;
+	t_swapchain->GetBuffer( m_currentBackBufferIndex , IID_PPV_ARGS( &backBuffer ) );
+
+	commandAllocator->m_commandAllocator->Reset();
+	m_commandList->m_commandList->Reset( commandAllocator->m_commandAllocator , nullptr );
+
 	float clearFloats[ 4 ];
 	float scaleToFloat = 1 / 255.f;
 
@@ -353,13 +422,22 @@ void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 	clearFloats[ 2 ] = ( float ) clearColor.b * scaleToFloat;
 	clearFloats[ 3 ] = ( float ) clearColor.a * scaleToFloat;
 
-	// can be put under clear Texture function
+	D3D12_RESOURCE_BARRIER barrier;
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	barrier.Transition.pResource = backBuffer;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	
+	m_commandList->m_commandList->ResourceBarrier( 1 , &barrier );
+	m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-	//Texture* backbuffer = m_swapChain->GetBackBuffer();
-	//TextureView* backbuffer_rtv = backbuffer->GetOrCreateRenderTargetView();
-	//
-	//ID3D12RenderTargetView* rtv = backbuffer_rtv->GetRTVHandle();
-	//m_context->ClearRenderTargetView( rtv , clearFloats );
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+
+	rtv.ptr += ( m_RTVDescriptorSize * ( uint ) m_currentBackBufferIndex );
+	
+	m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -465,9 +543,8 @@ bool RenderContextDX12::CheckTearingSupport()
 
 void RenderContextDX12::UpdateRenderTargetViews()
 {
-	UINT strideRTV = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
-
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+//	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
 	for ( int backBufferIndex = 0; backBufferIndex < m_numBackBufferFrames; ++backBufferIndex )
 	{
@@ -477,7 +554,7 @@ void RenderContextDX12::UpdateRenderTargetViews()
 		m_device->CreateRenderTargetView( backBuffer , nullptr , rtvHandle );
 
 		t_backBuffers[ backBufferIndex ] = backBuffer;
-		rtvHandle.ptr += strideRTV;
+		rtvHandle.ptr += m_RTVDescriptorSize;
 	}
 }
 
