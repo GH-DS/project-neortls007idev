@@ -19,7 +19,6 @@ namespace UnitTests
 	{
 	public:
 			
-		HRESULT resourceInit;
 		TEST_METHOD( Init )
 		{
 // 			if ( g_unitTestWindow == nullptr )
@@ -52,6 +51,7 @@ namespace UnitTests
 */
 		TEST_METHOD( RendererDeviceCreation )
 		{
+			HRESULT resourceInit;
 			resourceInit = g_theRenderer->CreateDevice();
 			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
 		}					

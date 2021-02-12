@@ -177,7 +177,7 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 
 HRESULT RenderContextDX12::CreateDevice()
 {
-	HRESULT deviceCreation = D3D12CreateDevice( NULL , D3D_FEATURE_LEVEL_12_1 , IID_PPV_ARGS( &m_device ) );
+	HRESULT deviceCreation = D3D12CreateDevice( m_deviceAdapter , D3D_FEATURE_LEVEL_12_1 , IID_PPV_ARGS( &m_device ) );
 	GUARANTEE_OR_DIE( deviceCreation == S_OK , "D3D12 DEVICE CREATION FAILED" );
 	return deviceCreation;
 }
