@@ -139,10 +139,10 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 	
 	if ( useWARPAdapter )
 	{
-		result |= dxgiFactory->EnumWarpAdapter( IID_PPV_ARGS( &warpAdapter ) );
+		result = dxgiFactory->EnumWarpAdapter( IID_PPV_ARGS( &warpAdapter ) );
 		GUARANTEE_OR_DIE( result == S_OK , "WARP ADAPTER FAILED DURING DEVICE ENUMERATION" );
 
- 		result |= warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) );
+ 		result = warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) );
  		GUARANTEE_OR_DIE( result == S_OK , "WARP ADAPTER ASSIGNMENT FAILED");
 	}
 	else
@@ -163,7 +163,7 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 			{
 				maxDedicatedVideoMemory = dxgiAdapterDesc1.DedicatedVideoMemory;
 
-				result |= warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) );
+				result = warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) );
 				GUARANTEE_OR_DIE( warpAdapter->QueryInterface( IID_PPV_ARGS( &m_deviceAdapter ) ) == S_OK , "HARDWARE ADAPTER ASSIGNMENT FAILED" );
 			}
 		}
