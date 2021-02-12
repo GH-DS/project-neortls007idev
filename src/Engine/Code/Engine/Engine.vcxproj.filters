@@ -134,6 +134,12 @@
     <Filter Include="ThirdParty\ImGUI\Plot">
       <UniqueIdentifier>{a11a00e2-e778-4a82-8e83-80c098ef9117}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RendererDX12">
+      <UniqueIdentifier>{c10e9ab8-b59a-42ef-9a98-4a749367896b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RendererDX12\D3D 12 Pipeline">
+      <UniqueIdentifier>{78a9a170-82b8-4a2d-938b-39a9e5f3b6cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Rgba8.cpp">
@@ -525,6 +531,42 @@
     </ClCompile>
     <ClCompile Include="Memory\JobSystemWorkerThread.cpp">
       <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\RenderContextDX12.cpp">
+      <Filter>RendererDX12</Filter>
+    </ClCompile>
+    <ClCompile Include="Profilling\D3D12PerformanceMarker.cpp">
+      <Filter>Profilling</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\FenceDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\DispatchQueueDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\CommandQueueDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\CommandListDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\CopyQueueDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\DirectQueueDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\CommandAllocatorDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\DescriptorHeapDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\SwapChainDX12.cpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererDX12\D3D12Utils.cpp">
+      <Filter>RendererDX12</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -986,6 +1028,45 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\ImGUI\implot_internal.h">
       <Filter>ThirdParty\ImGUI\Plot</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\RenderContextDX12.hpp">
+      <Filter>RendererDX12</Filter>
+    </ClInclude>
+    <ClInclude Include="Profilling\D3D12PerformanceMarker.hpp">
+      <Filter>Profilling</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\D3D12Common.hpp">
+      <Filter>RendererDX12</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\FenceDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\DispatchQueueDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\CommandQueueDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\CommandListDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\CopyQueueDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\DirectQueueDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\CommandAllocatorDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\DescriptorHeapDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\SwapChainDX12.hpp">
+      <Filter>RendererDX12\D3D 12 Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\D3D12Utils.hpp">
+      <Filter>RendererDX12</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

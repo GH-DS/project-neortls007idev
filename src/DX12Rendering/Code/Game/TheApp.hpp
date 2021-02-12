@@ -23,12 +23,9 @@ public:
 private :
 	bool				m_isSloMo				= false;
 	bool				m_isSpeedMo				= false;
-	float				m_taskbarProgress		= 0.f;
-	eWindowProgressMode m_taskbarProgressMode	= WND_PROGRESS_VALUE;
 
 public:
 	bool				m_isPaused				= false;
-	bool				m_debugCamera			= false;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

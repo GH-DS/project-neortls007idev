@@ -2,38 +2,57 @@
 #include "CppUnitTest.h"
 #include "Engine/Core/Rgba8.hpp"
 #include "Engine/Math/MathUtils.hpp"
+#include "Engine/RendererDX12/RenderContextDX12.hpp"
+#include "Engine/Platform/Window.hpp"
+#include "Engine/Input/InputSystem.hpp"
+#include "Engine/Core/EngineCommon.hpp"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+Window* g_theWindow = nullptr;
+
+extern RenderContextDX12* g_theRenderer;
 
 namespace UnitTests
 {
 	TEST_CLASS(UnitTests)
 	{
 	public:
-		
-		TEST_METHOD(ARECOLORSEQUAL)
+			
+		HRESULT resourceInit;
+		TEST_METHOD( Init )
 		{
-			Rgba8 testColor = RED;
-			Assert::AreEqual( testColor == RED , true , L"They match" );
+// 			if ( g_unitTestWindow == nullptr )
+// 			{
+// 				g_unitTestWindow = new Window();
+// 				g_unitTestWindow->Startup();
+// 			}
 
-			testColor = GREEN;
-			Assert::AreEqual( testColor == GREEN , true , L"They match" );
-
-			testColor = BLUE;
-			Assert::AreEqual( testColor == BLUE , true , L"They match" );
+			if ( g_theRenderer == nullptr )
+			{
+				g_theRenderer = new RenderContextDX12();
+			}
+			Assert::IsNotNull( g_theRenderer , L"Renderer Was initialized" , LINE_INFO() );
 		}
 
-		TEST_METHOD( VectorLength )
-		{
-			Vec2 A( 8.f , 6.f );
-			Assert::AreEqual( A.GetLength() , 10.f , L"They match" );
+// NOTE :- Checking hardware Adapter on CI fails.
 
-			Vec2 B( 3.f , 4.f );
-			Assert::AreEqual( B.GetLength() , 5.f , L"They match" );
-
-			Assert::AreEqual( RoundDownToInt( A.GetAngleDegrees() ) , 36 , L"They match" );
-			Assert::AreEqual( RoundDownToInt( B.GetAngleDegrees() ) , 53 , L"They match" );
-		}
+//		TEST_METHOD( RendererCheckGPUGraphicsAdapters )
+//		{
+//			resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
+//			Assert::AreEqual( resourceInit , S_OK , L"Hardware Adapter Creation Check Successful" );
+//		}
 		
+// 		TEST_METHOD( RendererCheckWARPGraphicsAdapters )
+// 		{
+// 			resourceInit = g_theRenderer->CheckGraphicsAdapters( true );
+// 			Assert::AreEqual( resourceInit , S_OK , L"WARP Adapter Creation Check Successful" );
+// 		}
+// 		
+// 		TEST_METHOD( RendererDeviceCreation )
+// 		{
+// 			resourceInit = g_theRenderer->CreateDevice();
+// 			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
+// 		}					
 	};
 }
