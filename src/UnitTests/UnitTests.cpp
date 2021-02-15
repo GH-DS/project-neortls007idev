@@ -32,6 +32,10 @@ namespace UnitTests
 				g_theRenderer = new RenderContextDX12();
 			}
 			Assert::IsNotNull( g_theRenderer , L"Renderer Was initialized" , LINE_INFO() );
+
+			HRESULT resourceInit;
+			resourceInit = g_theRenderer->CreateDevice();
+			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
 		}
 
 // NOTE :- Checking hardware Adapter on CI fails.
