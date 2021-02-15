@@ -49,11 +49,11 @@ namespace UnitTests
 			Assert::AreEqual( resourceInit , S_OK , L"Hardware Adapter Creation Check Successful" );
 		}
 */
-		TEST_METHOD( RendererDeviceCreation )
-		{
-			HRESULT resourceInit;
-			resourceInit = g_theRenderer->CreateDevice();
-			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
-		}					
+// 		TEST_METHOD( RendererDeviceCreation )
+// 		{
+// 			HRESULT resourceInit;
+// 			resourceInit = g_theRenderer->CreateDevice();
+// 			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
+// 		}					
 	};
 }
