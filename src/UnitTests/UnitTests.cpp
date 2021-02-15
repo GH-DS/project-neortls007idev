@@ -37,22 +37,22 @@ namespace UnitTests
 
 // NOTE :- Checking hardware Adapter on CI fails.
 
-//		TEST_METHOD( RendererCheckGPUGraphicsAdapters )
-//		{
-//			resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
-//			Assert::AreEqual( resourceInit , S_OK , L"Hardware Adapter Creation Check Successful" );
-//		}
-		
+// 		TEST_METHOD( RendererCheckGPUGraphicsAdapters )
+// 		{
+// 			resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
+// 			Assert::AreEqual( resourceInit , S_OK , L"Hardware Adapter Creation Check Successful" );
+// 		}
+// 		
 // 		TEST_METHOD( RendererCheckWARPGraphicsAdapters )
 // 		{
 // 			resourceInit = g_theRenderer->CheckGraphicsAdapters( true );
 // 			Assert::AreEqual( resourceInit , S_OK , L"WARP Adapter Creation Check Successful" );
 // 		}
-// 		
-// 		TEST_METHOD( RendererDeviceCreation )
-// 		{
-// 			resourceInit = g_theRenderer->CreateDevice();
-// 			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
-// 		}					
+		
+		TEST_METHOD( RendererDeviceCreation )
+		{
+			resourceInit = g_theRenderer->CreateDevice();
+			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
+		}					
 	};
 }
