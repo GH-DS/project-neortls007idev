@@ -64,10 +64,10 @@ void Game::Update( float deltaSeconds )
 
 void Game::Render() const
 {
-	//g_theRenderer->ClearScreen( m_clearScreenColor );
-	//g_theRenderer->BeginCamera( m_gameCamera );
-	//g_theRenderer->SetRasterState( FILL_SOLID );
-	//g_theRenderer->EndCamera( m_gameCamera );
+	g_theRenderer->ClearScreen( m_clearScreenColor );
+// 	g_theRenderer->BeginCamera( m_gameCamera );
+// 	g_theRenderer->SetRasterState( FILL_SOLID );
+// 	g_theRenderer->EndCamera( m_gameCamera );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

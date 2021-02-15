@@ -114,27 +114,27 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	resourceInit |= CreateDevice();
 
 #if defined( RENDER_DEBUG ) || defined ( _DEBUG ) || defined ( _FASTBREAK ) || defined ( _DEBUG_PROFILE ) || defined ( _FASTBREAK_PROFILE ) || defined ( _RELEASE_PROFILE )
-//	CreateDebugModule();
-//	CreateInfoQueue();
+	CreateDebugModule();
+	CreateInfoQueue();
 #endif
 
-	//m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
-	//
-	//resourceInit |= CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
-	//m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
- 	//
-	//m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
-	//m_RTVDescriptorSize = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
- 	//
- 	//UpdateRenderTargetViews();
-	//
-	//for ( int index = 0; index < m_numBackBufferFrames; ++index )
-	//{
-	//	m_commandAllocators[ index ] = new CommandAllocatorDX12( this , D3D12_COMMAND_LIST_TYPE_DIRECT );
-	//}
-	//m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , D3D12_COMMAND_LIST_TYPE_DIRECT );
-	//
-	//CreateFenceEventHandle();
+	m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
+	
+	resourceInit |= CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
+	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
+ 	
+	m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
+	m_RTVDescriptorSize = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
+ 	
+ 	UpdateRenderTargetViews();
+	
+	for ( int index = 0; index < m_numBackBufferFrames; ++index )
+	{
+		m_commandAllocators[ index ] = new CommandAllocatorDX12( this , D3D12_COMMAND_LIST_TYPE_DIRECT );
+	}
+	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , D3D12_COMMAND_LIST_TYPE_DIRECT );
+	
+	CreateFenceEventHandle();
 
 	return resourceInit;
 }
@@ -275,8 +275,8 @@ void RenderContextDX12::UpdateFrameTime( float deltaSeconds )
 
 void RenderContextDX12::EndFrame()
 {
-//	Present();
-//	Flush( m_fenceValue );
+	Present();
+	Flush( m_fenceValue );
 	//m_swapChain->Present();
 }
 
