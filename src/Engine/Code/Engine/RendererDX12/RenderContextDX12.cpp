@@ -88,13 +88,13 @@ RenderContextDX12::~RenderContextDX12()
 	}
 	DX_SAFE_RELEASE( t_swapchain );
 
-//	DX_SAFE_RELEASE( m_infoQueue );
-//	DX_SAFE_RELEASE( m_dx12DebugModule );
-//	DX_SAFE_RELEASE( m_debug );
+	DX_SAFE_RELEASE( m_infoQueue );
+	DX_SAFE_RELEASE( m_dx12DebugModule );
+	DX_SAFE_RELEASE( m_debug );
 	DX_SAFE_RELEASE( m_deviceAdapter );
 	DX_SAFE_RELEASE( m_device );
 //	DX_SAFE_RELEASE( m_context );
-//	DX_SAFE_RELEASE( m_device );
+	DX_SAFE_RELEASE( m_device );
 
 	delete g_D3D12PerfMarker;
 	g_D3D12PerfMarker = nullptr;
