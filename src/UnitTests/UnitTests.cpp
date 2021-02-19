@@ -9,55 +9,57 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
 Window* g_theWindow = nullptr;
-
 extern RenderContextDX12* g_theRenderer;
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
+TEST_MODULE_INITIALIZE( RenderContextDX12Init )
+{
+	if ( g_theRenderer == nullptr )
+	{
+		g_theRenderer = new RenderContextDX12();
+	}
+	Assert::IsNotNull( g_theRenderer , L"Renderer Was initialized" , LINE_INFO() );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+TEST_MODULE_CLEANUP( RenderContextDX12Destruction )
+{
+	g_theRenderer->Shutdown();
+	SAFE_RELEASE_POINTER( g_theRenderer );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
 
 namespace UnitTests
 {
 	TEST_CLASS(UnitTests)
 	{
+			HRESULT m_resourceInit;
 	public:
-			
-		TEST_METHOD( Init )
+//----------------------------------------------------------------------------------------------------------			
+		TEST_METHOD( A00000_Init )
 		{
-// 			if ( g_unitTestWindow == nullptr )
-// 			{
-// 				g_unitTestWindow = new Window();
-// 				g_unitTestWindow->Startup();
-// 			}
-
-			if ( g_theRenderer == nullptr )
-			{
-				g_theRenderer = new RenderContextDX12();
-			}
-			Assert::IsNotNull( g_theRenderer , L"Renderer Was initialized" , LINE_INFO() );
-
-			HRESULT resourceInit;
-			resourceInit = g_theRenderer->CreateDevice();
-			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
+			m_resourceInit = g_theRenderer->CreateDevice();
+			Assert::AreEqual( m_resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
 		}
-
-// NOTE :- Checking hardware Adapter on CI fails.
-
-/*
- 		TEST_METHOD( RendererCheckWARPGraphicsAdapters )
+//----------------------------------------------------------------------------------------------------------
+ 		TEST_METHOD( A00010_RendererCheckWARPGraphicsAdapters )
  		{
- 			resourceInit = g_theRenderer->CheckGraphicsAdapters( true );
- 			Assert::AreEqual( resourceInit , S_OK , L"WARP Adapter Creation Check Successful" );
+ 			m_resourceInit = g_theRenderer->CheckGraphicsAdapters( true );
+ 			Assert::AreEqual( m_resourceInit , S_OK , L"WARP Adapter Creation Check Successful" );
  		}
-		
-		TEST_METHOD( RendererCheckGPUGraphicsAdapters )
+//----------------------------------------------------------------------------------------------------------
+		TEST_METHOD( A00020_RendererCheckGPUGraphicsAdapters )
 		{
-			resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
-			Assert::AreEqual( resourceInit , S_OK , L"Hardware Adapter Creation Check Successful" );
-		}
-*/
-// 		TEST_METHOD( RendererDeviceCreation )
-// 		{
-// 			HRESULT resourceInit;
-// 			resourceInit = g_theRenderer->CreateDevice();
-// 			Assert::AreEqual( resourceInit , S_OK , L"DirectX 12 Device Creation Successful" );
-// 		}					
+			m_resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
+			Assert::AreEqual( m_resourceInit , S_OK , L"Hardware Adapter Creation Check Successful" );
+		}			
 	};
 }
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
