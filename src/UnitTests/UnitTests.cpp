@@ -14,24 +14,6 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 Window* g_theWindow = nullptr;
 extern RenderContextDX12* g_theRenderer;
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-	
-TEST_MODULE_INITIALIZE( RenderContextDX12Init )
-{
-	if ( g_theRenderer == nullptr )
-	{
-		g_theRenderer = new RenderContextDX12();
-	}
-	Assert::IsNotNull( g_theRenderer , L"Renderer Was initialized" , LINE_INFO() );
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-TEST_MODULE_CLEANUP( RenderContextDX12Destruction )
-{
-	g_theRenderer->Shutdown();
-	SAFE_RELEASE_POINTER( g_theRenderer );
-}
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -39,6 +21,25 @@ namespace UnitTests
 {
 	TEST_CLASS(UnitTests)
 	{
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
+	TEST_CLASS_INITIALIZE( RenderContextDX12Init )
+	{
+		if ( g_theRenderer == nullptr )
+		{
+			g_theRenderer = new RenderContextDX12();
+		}
+		Assert::IsNotNull( g_theRenderer , L"Renderer Was initialized" , LINE_INFO() );
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	TEST_CLASS_CLEANUP( RenderContextDX12Destruction )
+	{
+		g_theRenderer->Shutdown();
+		SAFE_RELEASE_POINTER( g_theRenderer );
+	}
+
 			HRESULT m_resourceInit;
 	public:
 //----------------------------------------------------------------------------------------------------------			
