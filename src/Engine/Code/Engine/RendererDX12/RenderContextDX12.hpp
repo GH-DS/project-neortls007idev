@@ -42,7 +42,7 @@ public:
 	void					EndFrame();
 	void					Shutdown();
 	
-	HRESULT					CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount );
+	HRESULT					CreateSwapChain( CommandQueueDX12* commandQueue , uint32_t bufferCount );
 	void*					CreateFenceEventHandle();
 	void					Present();
 	void					Flush( uint64_t& fenceValue );

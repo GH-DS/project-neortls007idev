@@ -124,7 +124,7 @@ HRESULT RenderContextDX12::Startup( Window* window )
 
 	m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
 	
-	resourceInit |= CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
+	resourceInit |= CreateSwapChain( m_commandQueue , m_numBackBufferFrames );
 	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
  	
 	m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
@@ -349,7 +349,7 @@ void RenderContextDX12::Shutdown()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-HRESULT RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount )
+HRESULT RenderContextDX12::CreateSwapChain( CommandQueueDX12* commandQueue , uint32_t bufferCount )
 {
 	IDXGIFactory4* dxgiFactory4 = nullptr;
 	UINT createFactoryFlags = 0;
@@ -361,8 +361,8 @@ HRESULT RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* comman
 	GUARANTEE_OR_DIE( swapchain == S_OK , "Factory Creation for SWAP CHAIN FAILED" );
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-	swapChainDesc.Width = width;
-	swapChainDesc.Height = height;
+	swapChainDesc.Width = ( uint32_t ) m_window->GetClientWidth();
+	swapChainDesc.Height = ( uint32_t ) m_window->GetClientHeight();
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	swapChainDesc.Stereo = FALSE;
 	swapChainDesc.SampleDesc = { 1, 0 };
@@ -377,7 +377,7 @@ HRESULT RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* comman
 	IDXGISwapChain1* swapChain1 = nullptr;
 	swapchain |= dxgiFactory4->CreateSwapChainForHwnd(
 		commandQueue->m_commandQueue ,
-		hWnd ,
+		( HWND ) m_window->m_hwnd ,
 		&swapChainDesc ,
 		nullptr ,
 		nullptr ,
