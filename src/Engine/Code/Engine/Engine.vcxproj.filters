@@ -568,6 +568,9 @@
     <ClCompile Include="RendererDX12\D3D12Utils.cpp">
       <Filter>RendererDX12</Filter>
     </ClCompile>
+    <ClCompile Include="RendererDX12\ShaderDX12.cpp">
+      <Filter>RendererDX12</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Rgba8.hpp">
@@ -1066,6 +1069,9 @@
       <Filter>RendererDX12\D3D 12 Pipeline</Filter>
     </ClInclude>
     <ClInclude Include="RendererDX12\D3D12Utils.hpp">
+      <Filter>RendererDX12</Filter>
+    </ClInclude>
+    <ClInclude Include="RendererDX12\ShaderDX12.hpp">
       <Filter>RendererDX12</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,6 +2,7 @@
 #include "Engine/Platform/Window.hpp"
 #include "Engine/RendererDX12/D3D12Utils.hpp"
 #include <chrono>
+#include <d3dcommon.h>
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -13,12 +14,15 @@ struct	ID3D12InfoQueue;
 struct	IDXGIAdapter4;
 struct	IDXGIDebug;
 struct  ID3D12Debug;
+struct  ID3D12RootSignature;
 
+class	Window;
 class	CommandQueueDX12;
 class	DirectQueueDX12;
 class	DescriptorHeapDX12;
 class	CommandAllocatorDX12;
 class	CommandListDX12;
+class	ShaderDX12;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	
@@ -64,10 +68,12 @@ public:
 	bool					IsVSyncEnabled()											{ return m_isVsyncEnabled; }
 	bool					HasTearingSupport()											{ return m_hasTearingSupport; }
 	void					UpdateRenderTargetViews();
-	
+	void					CreateRootSignature();
 //--------------------------------------------------------------------------------------------------------------------------------------------
-	
+	void					TestDraw();
 public:
+
+	Window*										m_window												= nullptr;
 	ID3D12Device*								m_device												= nullptr;
 	ID3D12DeviceContext*						m_context												= nullptr;
 	void*										m_debugModule											= nullptr;
@@ -94,6 +100,18 @@ public:
 	CommandAllocatorDX12*						m_commandAllocators[ 3 ];
 	CommandListDX12*							m_commandList											= nullptr;
 	HANDLE										m_fenceEvent											= nullptr;
+	
+	ID3D12RootSignature*						m_rootSignature											= nullptr;
+	ID3DBlob*									m_rootSignatureBlob										= nullptr;
+	ID3DBlob*									m_errorBlob												= nullptr;
+	
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC			m_pipelineStateDesc;
+	ID3D12PipelineState*						m_pipelineState											= nullptr;
+	ShaderDX12*									m_currentShader											= nullptr;
+	ShaderDX12*									m_defaultShader											= nullptr;
+
+	D3D12_VIEWPORT								m_viewPort;
+	D3D12_RECT									m_scisrroRec;
 private:
 	
 };

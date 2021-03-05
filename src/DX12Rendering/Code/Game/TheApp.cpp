@@ -132,8 +132,7 @@ void TheApp::Update( float deltaSeconds )
 
 void TheApp::Render() const
 {
- 		g_theGame->Render();
-
+	g_theGame->Render();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

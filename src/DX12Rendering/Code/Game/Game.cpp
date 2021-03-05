@@ -57,6 +57,7 @@ void Game::Update( float deltaSeconds )
 	{
 		m_colorLerpTimer = 0.f;
 	}
+	m_clearScreenColor = BLACK;
 	m_colorLerpTimer += deltaSeconds;
 }
 
@@ -65,6 +66,7 @@ void Game::Update( float deltaSeconds )
 void Game::Render() const
 {
 	g_theRenderer->ClearScreen( m_clearScreenColor );
+	g_theRenderer->TestDraw();
 // 	g_theRenderer->BeginCamera( m_gameCamera );
 // 	g_theRenderer->SetRasterState( FILL_SOLID );
 // 	g_theRenderer->EndCamera( m_gameCamera );
