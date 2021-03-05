@@ -98,22 +98,22 @@ namespace UnitTests
 			Logger::WriteMessage( "DirectX 12 GPU Adapter device Creation Successful" );
 		}			
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00030_CommandQueueCreation )
-		{
-			g_theRenderer->m_commandQueue = g_theRenderer->CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
-			Assert::IsNotNull( g_theRenderer->m_commandQueue , L"Command Queue Creation Failed" );
-			Logger::WriteMessage( "DirectX 12 Command Queue Creation Successful" );
-		}	
-//----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00040DescriptorCreation )
-		{
-
-			g_theRenderer->m_RTVDescriptorHeap = new DescriptorHeapDX12( g_theRenderer , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , g_theRenderer->m_numBackBufferFrames );
-			g_theRenderer->m_RTVDescriptorSize = g_theRenderer->m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
-
-			Assert::IsNotNull( g_theRenderer->m_RTVDescriptorHeap , L"Descriptor Heap Creation Failed" );
-			Logger::WriteMessage( "Descriptor Heap Creation Successful" );
-		}
+// 		TEST_METHOD( A00030_CommandQueueCreation )
+// 		{
+// 			g_theRenderer->m_commandQueue = g_theRenderer->CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
+// 			Assert::IsNotNull( g_theRenderer->m_commandQueue , L"Command Queue Creation Failed" );
+// 			Logger::WriteMessage( "DirectX 12 Command Queue Creation Successful" );
+// 		}	
+// //----------------------------------------------------------------------------------------------------------
+// 		TEST_METHOD( A00040DescriptorCreation )
+// 		{
+// 
+// 			g_theRenderer->m_RTVDescriptorHeap = new DescriptorHeapDX12( g_theRenderer , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , g_theRenderer->m_numBackBufferFrames );
+// 			g_theRenderer->m_RTVDescriptorSize = g_theRenderer->m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
+// 
+// 			Assert::IsNotNull( g_theRenderer->m_RTVDescriptorHeap , L"Descriptor Heap Creation Failed" );
+// 			Logger::WriteMessage( "Descriptor Heap Creation Successful" );
+// 		}
 	};
 }
 
