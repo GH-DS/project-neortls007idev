@@ -93,14 +93,14 @@ namespace UnitTests
 			Logger::WriteMessage( "DirectX 12 WARP Adapter device Creation Successful" );
  		}
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00020_RendererCheckGPUGraphicsAdapters )
-		{
-			m_resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
-			Assert::AreEqual( m_resourceInit , S_OK , L"Hardware Adapter Creation Check Failed" );
-			Logger::WriteMessage( "DirectX 12 GPU Adapter device Creation Successful" );
-		}			
+		//TEST_METHOD( A00020_RendererCheckGPUGraphicsAdapters )
+		//{
+		//	m_resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
+		//	Assert::AreEqual( m_resourceInit , S_OK , L"Hardware Adapter Creation Check Failed" );
+		//	Logger::WriteMessage( "DirectX 12 GPU Adapter device Creation Successful" );
+		//}			
 //----------------------------------------------------------------------------------------------------------
-	/*	TEST_METHOD( A00030_CommandQueueCreation )
+		TEST_METHOD( A00030_CommandQueueCreation )
 		{
 			g_theRenderer->m_commandQueue = g_theRenderer->CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
 			Assert::IsNotNull( g_theRenderer->m_commandQueue , L"Command Queue Creation Failed" );
@@ -144,7 +144,6 @@ namespace UnitTests
 			Assert::IsNotNull( g_theRenderer->m_rootSignature , L"Root Signature Creation Failed" );
 			Logger::WriteMessage( "Root Signature Creation Successful" );
 		}
-		*/
 	};
 }
 
