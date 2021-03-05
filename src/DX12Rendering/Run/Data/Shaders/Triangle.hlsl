@@ -16,6 +16,7 @@ struct VertexToFragment_t
    // use for rasterization.  When it is the input (pixel shader stage), it will
    // actually hold the pixel coordinates.
    float4 position : SV_POSITION;
+    float4 color : COLOR;
 };
 
 //--------------------------------------------------------------------------------------
@@ -25,9 +26,16 @@ struct VertexToFragment_t
 // from a contsant buffer - which we'll get into later (if you remove static, you'll notice
 // this stops working). 
 static float3 SOME_POSITIONS[3] = {
-   float3(-1.f, -1.f, 0.0f), 
-   float3(-.25f,  .50f, 0.0f), 
-   float3( .50f, -.25f, 0.0f),
+   float3( -0.25f,  -0.25f, 0.0f ), 
+   float3( 0.f, 0.25f, 0.0f ), 
+   float3( 0.25f, -0.25f, 0.0f ),
+};
+
+static float3 SOME_COLORS[3] =
+{
+    float3(1.f, 0.f, 0.0f),
+   float3(0.0f, 1.f, 0.0f),
+   float3(0.f, 0.f, 1.0f),
 };
 
 //--------------------------------------------------------------------------------------
@@ -40,7 +48,7 @@ VertexToFragment_t VertexFunction( vs_input_t input )
     // The output of a vertex shader is in clip-space, which is a 4D vector
     // so we need to convert out input to a 4D vector.
     v2f.position = float4( SOME_POSITIONS[input.vidx], 1.0f );
-    
+    v2f.color = float4(SOME_COLORS[input.vidx], 1.0f);
     // And return - this will pass it on to the next stage in the pipeline;
     return v2f;
 }
@@ -55,5 +63,5 @@ VertexToFragment_t VertexFunction( vs_input_t input )
 float4 FragmentFunction( VertexToFragment_t input ) : SV_Target0 // semeantic of what I'm returning
 {
    // We just output a solid colour - in this case, white. 
-   return float4( 1.0f, 1.0f, 1.0f, 1.0f );
+   return float4( input.color );
 }

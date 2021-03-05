@@ -57,7 +57,6 @@ void Game::Update( float deltaSeconds )
 	{
 		m_colorLerpTimer = 0.f;
 	}
-	m_clearScreenColor = BLACK;
 	m_colorLerpTimer += deltaSeconds;
 }
 
