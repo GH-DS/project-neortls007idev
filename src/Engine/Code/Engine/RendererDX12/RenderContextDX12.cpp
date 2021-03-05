@@ -663,13 +663,14 @@ void RenderContextDX12::CreateRootSignature()
 	
 	D3D12_ROOT_PARAMETER rootParameters[ 1 ] = {};
 	
-	rootParameters[ 0 ].Constants.Num32BitValues = 16;
+	rootParameters[ 0 ].Constants.Num32BitValues = sizeof( Mat44 ) / sizeof( float );
 	rootParameters[ 0 ].Constants.RegisterSpace = 0;
 	rootParameters[ 0 ].Constants.ShaderRegister = 0;
 	rootParameters[ 0 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameters[ 0 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 
-	rootSignatureDescription.NumParameters		= 0/* _countof( rootParameters )*/;
-	rootSignatureDescription.pParameters		= nullptr/*rootParameters*/;
+	rootSignatureDescription.NumParameters		=  _countof( rootParameters );
+	rootSignatureDescription.pParameters		= rootParameters;
 	rootSignatureDescription.NumStaticSamplers	= 0;
 	rootSignatureDescription.pStaticSamplers	= nullptr;
 	rootSignatureDescription.Flags				= rootSignatureFlags;

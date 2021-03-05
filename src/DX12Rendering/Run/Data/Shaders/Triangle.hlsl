@@ -15,8 +15,8 @@ struct VertexToFragment_t
    // SV_POSITION denotes that this is output in clip space, and will be 
    // use for rasterization.  When it is the input (pixel shader stage), it will
    // actually hold the pixel coordinates.
-   float4 position : SV_POSITION;
-    float4 color : COLOR;
+   float4 position  : SV_POSITION;
+   float4 color     : COLOR;
 };
 
 //--------------------------------------------------------------------------------------
@@ -25,17 +25,18 @@ struct VertexToFragment_t
 // The term 'static' refers to this an built into the shader, and not coming
 // from a contsant buffer - which we'll get into later (if you remove static, you'll notice
 // this stops working). 
-static float3 SOME_POSITIONS[3] = {
-   float3( -0.25f,  -0.25f, 0.0f ), 
-   float3( 0.f, 0.25f, 0.0f ), 
-   float3( 0.25f, -0.25f, 0.0f ),
+static float3 SOME_POSITIONS[ 3 ] =
+{
+   float3( -0.25f , -0.25f , 0.0f ) ,
+   float3( 0.f , 0.25f , 0.0f ) ,
+   float3( 0.25f , -0.25f , 0.0f ) ,
 };
 
-static float3 SOME_COLORS[3] =
+static float3 SOME_COLORS[ 3 ] =
 {
-    float3(1.f, 0.f, 0.0f),
-   float3(0.0f, 1.f, 0.0f),
-   float3(0.f, 0.f, 1.0f),
+   float3( 1.f , 0.f , 0.f ) ,
+   float3( 0.f , 1.f , 0.f ) ,
+   float3( 0.f , 0.f , 1.f ) ,
 };
 
 //--------------------------------------------------------------------------------------
@@ -47,8 +48,8 @@ VertexToFragment_t VertexFunction( vs_input_t input )
     
     // The output of a vertex shader is in clip-space, which is a 4D vector
     // so we need to convert out input to a 4D vector.
-    v2f.position = float4( SOME_POSITIONS[input.vidx], 1.0f );
-    v2f.color = float4(SOME_COLORS[input.vidx], 1.0f);
+    v2f.position    = float4( SOME_POSITIONS[ input.vidx ] , 1.0f );
+    v2f.color       = float4( SOME_COLORS[ input.vidx ] , 1.0f );
     // And return - this will pass it on to the next stage in the pipeline;
     return v2f;
 }
