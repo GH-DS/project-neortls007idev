@@ -2,10 +2,10 @@
 #include "Engine/Platform/Window.hpp"
 #include "Engine/RendererDX12/D3D12Utils.hpp"
 #include <chrono>
+#include <d3dcommon.h>
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-struct  ID3D12Device2;
 struct  ID3D12Resource;
 struct  IDXGISwapChain4;
 struct	ID3D12Device;
@@ -14,12 +14,15 @@ struct	ID3D12InfoQueue;
 struct	IDXGIAdapter4;
 struct	IDXGIDebug;
 struct  ID3D12Debug;
+struct  ID3D12RootSignature;
 
+class	Window;
 class	CommandQueueDX12;
 class	DirectQueueDX12;
 class	DescriptorHeapDX12;
 class	CommandAllocatorDX12;
 class	CommandListDX12;
+class	ShaderDX12;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	
@@ -39,10 +42,15 @@ public:
 	void					EndFrame();
 	void					Shutdown();
 	
-	HRESULT					CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount );
+	HRESULT					CreateSwapChain( CommandQueueDX12* commandQueue , uint32_t bufferCount );
 	void*					CreateFenceEventHandle();
 	void					Present();
 	void					Flush( uint64_t& fenceValue );
+
+	void					ClearDepth( CommandListDX12* commandList ,	D3D12_CPU_DESCRIPTOR_HANDLE dsv , FLOAT depth = 1.0f );
+
+	void					UpdateBufferResource( CommandListDX12* commandList , ID3D12Resource** pDestinationResource , ID3D12Resource** pIntermediateResource ,
+													size_t numElements , size_t elementSize , const void* bufferData , D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE );
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //			CAMERA METHODS
@@ -64,12 +72,14 @@ public:
 	bool					CheckTearingSupport();
 	bool					IsVSyncEnabled()											{ return m_isVsyncEnabled; }
 	bool					HasTearingSupport()											{ return m_hasTearingSupport; }
-	void					UpdateRenderTargetViews();
-	
+	void					CreateRenderTargetViews();
+	void					CreateRootSignature();
 //--------------------------------------------------------------------------------------------------------------------------------------------
-	
+	void					TestDraw();
 public:
-	ID3D12Device2*								m_device												= nullptr;
+
+	Window*										m_window												= nullptr;
+	ID3D12Device*								m_device												= nullptr;
 	ID3D12DeviceContext*						m_context												= nullptr;
 	void*										m_debugModule											= nullptr;
 	IDXGIDebug*									m_debug													= nullptr;
@@ -95,6 +105,30 @@ public:
 	CommandAllocatorDX12*						m_commandAllocators[ 3 ];
 	CommandListDX12*							m_commandList											= nullptr;
 	HANDLE										m_fenceEvent											= nullptr;
+	
+	ID3D12RootSignature*						m_rootSignature											= nullptr;
+	ID3DBlob*									m_rootSignatureBlob										= nullptr;
+	ID3DBlob*									m_errorBlob												= nullptr;
+	
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC			m_pipelineStateDesc;
+	ID3D12PipelineState*						m_pipelineState											= nullptr;
+	ShaderDX12*									m_currentShader											= nullptr;
+	ShaderDX12*									m_defaultShader											= nullptr;
+
+	D3D12_VIEWPORT								m_viewPort;
+	D3D12_RECT									m_scisrroRec;
+
+	// Vertex buffer for the cube.
+	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView = {};
+	ID3D12Resource*								m_vertexBuffer											= nullptr;
+	// Index buffer for the cube.
+	D3D12_INDEX_BUFFER_VIEW m_IndexBufferView = {};
+	ID3D12Resource*								m_indexBuffer											= nullptr;
+
+	// Depth buffer.
+	ID3D12Resource*								m_DepthBuffer											= nullptr;
+	// Descriptor heap for depth buffer.
+	ID3D12DescriptorHeap*						m_DSVHeap												= nullptr;
 private:
 	
 };

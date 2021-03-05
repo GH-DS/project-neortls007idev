@@ -35,6 +35,7 @@
 //			DIRECTX 12 SPECIFIC HEADERS	
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
+//#include <D3Dcommon.h>
 #include <d3d12.h>
 #include <d3d12sdklayers.h>
 #include <d3dcompiler.h>
@@ -44,6 +45,7 @@
 #include "DescriptorHeapDX12.hpp"
 #include "CommandAllocatorDX12.hpp"
 #include "CommandListDX12.hpp"
+#include "ShaderDX12.hpp"
 
 #define DX_SAFE_RELEASE( ptr ) if ( nullptr != ptr ) { ptr->Release(); ptr = nullptr; }
 
@@ -69,8 +71,32 @@ extern	D3D12PerformanceMarker* g_D3D12PerfMarker;
 	
 RenderContextDX12::~RenderContextDX12()
 {
+	//	Flush( m_fenceValue );
+//	::CloseHandle( m_fenceEvent );
+
+	SAFE_RELEASE_POINTER( m_commandList );
+	SAFE_RELEASE_POINTER( m_commandQueue );
+
+	for ( int index = 0; index < 3; index++ )
+	{
+		SAFE_RELEASE_POINTER( m_commandAllocators[ index ] );
+	}
+
+	SAFE_RELEASE_POINTER( m_RTVDescriptorHeap );
+
+	for ( int index = 0; index < 3; index++ )
+	{
+		DX_SAFE_RELEASE( t_backBuffers[ index ] );
+	}
+	DX_SAFE_RELEASE( t_swapchain );
+
+	DX_SAFE_RELEASE( m_infoQueue );
+	DX_SAFE_RELEASE( m_dx12DebugModule );
+	DX_SAFE_RELEASE( m_debug );
+	DX_SAFE_RELEASE( m_deviceAdapter );
+	DX_SAFE_RELEASE( m_device );
 //	DX_SAFE_RELEASE( m_context );
-//	DX_SAFE_RELEASE( m_device );
+	DX_SAFE_RELEASE( m_device );
 
 	delete g_D3D12PerfMarker;
 	g_D3D12PerfMarker = nullptr;
@@ -84,6 +110,8 @@ RenderContextDX12::~RenderContextDX12()
 
 HRESULT RenderContextDX12::Startup( Window* window )
 {
+	m_window = window;
+
 	EnableDebugLayer();
 	HRESULT resourceInit;
 	resourceInit = CheckGraphicsAdapters( false );
@@ -96,20 +124,76 @@ HRESULT RenderContextDX12::Startup( Window* window )
 
 	m_commandQueue = CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
 	
-	resourceInit |= CreateSwapChain( ( HWND ) window->m_hwnd , m_commandQueue , window->GetClientWidth() , window->GetClientHeight() , m_numBackBufferFrames );
+	resourceInit |= CreateSwapChain( m_commandQueue , m_numBackBufferFrames );
 	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
  	
 	m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
 	m_RTVDescriptorSize = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
- 
- 	UpdateRenderTargetViews();
-
+ 	
+ 	CreateRenderTargetViews();
+	
 	for ( int index = 0; index < m_numBackBufferFrames; ++index )
 	{
 		m_commandAllocators[ index ] = new CommandAllocatorDX12( this , D3D12_COMMAND_LIST_TYPE_DIRECT );
 	}
-	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , D3D12_COMMAND_LIST_TYPE_DIRECT );
 	
+	CreateRootSignature();
+
+	m_defaultShader = new ShaderDX12( this , "Data/Shaders/triangle.hlsl" );
+	m_defaultShader->CreateFromFile( this , "Data/Shaders/triangle.hlsl" );
+
+	m_currentShader = m_defaultShader;
+
+	// vertex layout
+	D3D12_INPUT_ELEMENT_DESC desc;
+	// pso description 
+	D3D12_BLEND_DESC blendDesc{};
+	blendDesc.AlphaToCoverageEnable = FALSE;
+	blendDesc.IndependentBlendEnable = FALSE;
+	blendDesc.RenderTarget[ 0 ].BlendEnable = FALSE;
+	blendDesc.RenderTarget[ 0 ].LogicOpEnable = FALSE;
+	blendDesc.RenderTarget[ 0 ].SrcBlend = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[ 0 ].DestBlend = D3D12_BLEND_ZERO;
+	blendDesc.RenderTarget[ 0 ].BlendOp = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D12_BLEND_ONE;
+	blendDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D12_BLEND_ZERO;
+	blendDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[ 0 ].LogicOp = D3D12_LOGIC_OP_NOOP;
+	blendDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+	D3D12_RASTERIZER_DESC rasterDesc{};
+	rasterDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	rasterDesc.CullMode = D3D12_CULL_MODE_BACK;
+	rasterDesc.FrontCounterClockwise = FALSE;
+	rasterDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+	rasterDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+	rasterDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	rasterDesc.DepthClipEnable = TRUE;
+	rasterDesc.MultisampleEnable = FALSE;
+	rasterDesc.AntialiasedLineEnable = FALSE;
+	rasterDesc.ForcedSampleCount = 0;
+	rasterDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	m_pipelineStateDesc.pRootSignature = m_rootSignature;
+
+
+	D3D12_INPUT_LAYOUT_DESC inputlayoutDesc{};
+	inputlayoutDesc.NumElements = 1;
+	m_pipelineStateDesc.InputLayout = { nullptr ,0 };
+	m_pipelineStateDesc.pRootSignature = m_rootSignature;
+	m_pipelineStateDesc.VS = m_currentShader->m_vertexStage.GetAsD3D12ByteCode();
+	m_pipelineStateDesc.PS = m_currentShader->m_fragmentStage.GetAsD3D12ByteCode();
+	m_pipelineStateDesc.RasterizerState = rasterDesc;
+	m_pipelineStateDesc.BlendState = blendDesc;
+	m_pipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
+	m_pipelineStateDesc.DepthStencilState.StencilEnable = FALSE;
+	m_pipelineStateDesc.SampleMask = UINT_MAX;
+	m_pipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	m_pipelineStateDesc.NumRenderTargets = 1;
+	m_pipelineStateDesc.RTVFormats[ 0 ] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	m_pipelineStateDesc.SampleDesc.Count = 1;
+	resourceInit |= m_device->CreateGraphicsPipelineState( &m_pipelineStateDesc , IID_PPV_ARGS( &m_pipelineState ) );
+	
+	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , m_pipelineState , D3D12_COMMAND_LIST_TYPE_DIRECT );
 	CreateFenceEventHandle();
 
 	return resourceInit;
@@ -177,7 +261,7 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 
 HRESULT RenderContextDX12::CreateDevice()
 {
-	HRESULT deviceCreation = D3D12CreateDevice( m_deviceAdapter , D3D_FEATURE_LEVEL_12_1 , IID_PPV_ARGS( &m_device ) );
+	HRESULT deviceCreation = D3D12CreateDevice( NULL , D3D_FEATURE_LEVEL_12_1 , _uuidof( ID3D12Device ) , ( void** ) &m_device );
 	GUARANTEE_OR_DIE( deviceCreation == S_OK , "D3D12 DEVICE CREATION FAILED" );
 	return deviceCreation;
 }
@@ -260,35 +344,12 @@ void RenderContextDX12::EndFrame()
 
 void RenderContextDX12::Shutdown()
 {
-	Flush( m_fenceValue );
-	::CloseHandle( m_fenceEvent );
 
-	SAFE_RELEASE_POINTER( m_commandList );
-	SAFE_RELEASE_POINTER( m_commandQueue );
-	
-	for ( int index = 0; index < 3; index++ )
-	{
-		SAFE_RELEASE_POINTER( m_commandAllocators[ index ] );
-	}
-
-	SAFE_RELEASE_POINTER( m_RTVDescriptorHeap );
-
-	for( int index = 0 ; index < 3 ; index++ )
-	{
-		DX_SAFE_RELEASE( t_backBuffers[ index ] );
-	}
-	DX_SAFE_RELEASE( t_swapchain );
-	
-	DX_SAFE_RELEASE( m_infoQueue );
-	DX_SAFE_RELEASE( m_dx12DebugModule );
-	DX_SAFE_RELEASE( m_debug );
-	DX_SAFE_RELEASE( m_deviceAdapter );
-	DX_SAFE_RELEASE( m_device );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-HRESULT RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* commandQueue , uint32_t width , uint32_t height , uint32_t bufferCount )
+HRESULT RenderContextDX12::CreateSwapChain( CommandQueueDX12* commandQueue , uint32_t bufferCount )
 {
 	IDXGIFactory4* dxgiFactory4 = nullptr;
 	UINT createFactoryFlags = 0;
@@ -300,8 +361,8 @@ HRESULT RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* comman
 	GUARANTEE_OR_DIE( swapchain == S_OK , "Factory Creation for SWAP CHAIN FAILED" );
 
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-	swapChainDesc.Width = width;
-	swapChainDesc.Height = height;
+	swapChainDesc.Width = ( uint32_t ) m_window->GetClientWidth();
+	swapChainDesc.Height = ( uint32_t ) m_window->GetClientHeight();
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	swapChainDesc.Stereo = FALSE;
 	swapChainDesc.SampleDesc = { 1, 0 };
@@ -316,7 +377,7 @@ HRESULT RenderContextDX12::CreateSwapChain( HWND hWnd , CommandQueueDX12* comman
 	IDXGISwapChain1* swapChain1 = nullptr;
 	swapchain |= dxgiFactory4->CreateSwapChainForHwnd(
 		commandQueue->m_commandQueue ,
-		hWnd ,
+		( HWND ) m_window->m_hwnd ,
 		&swapChainDesc ,
 		nullptr ,
 		nullptr ,
@@ -389,6 +450,20 @@ void RenderContextDX12::Flush( uint64_t& fenceValue )
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
+void RenderContextDX12::ClearDepth( CommandListDX12* commandList , D3D12_CPU_DESCRIPTOR_HANDLE dsv , FLOAT depth /*= 1.0f */ )
+{
+
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::UpdateBufferResource( CommandListDX12* commandList , ID3D12Resource** pDestinationResource , ID3D12Resource** pIntermediateResource , size_t numElements , size_t elementSize , const void* bufferData , D3D12_RESOURCE_FLAGS flags /*= D3D12_RESOURCE_FLAG_NONE */ )
+{
+
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
 
 void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 {
@@ -408,6 +483,22 @@ void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 	clearFloats[ 2 ] = ( float ) clearColor.b * scaleToFloat;
 	clearFloats[ 3 ] = ( float ) clearColor.a * scaleToFloat;
 
+	m_commandList->m_commandList->SetPipelineState( m_pipelineState );
+	m_commandList->m_commandList->SetGraphicsRootSignature( m_rootSignature );
+	m_viewPort.TopLeftX = 0;
+	m_viewPort.TopLeftY = 0;
+	m_viewPort.Height = ( FLOAT ) m_window->GetClientHeight();
+	m_viewPort.Width = ( FLOAT ) m_window->GetClientWidth();
+	m_viewPort.MinDepth = 0.0f;
+	m_viewPort.MaxDepth = 1.0f;
+
+	m_scisrroRec.left = 0;
+	m_scisrroRec.top = 0;
+	m_scisrroRec.right = ( LONG ) m_window->GetClientWidth();
+	m_scisrroRec.bottom = ( LONG ) m_window->GetClientHeight();
+	m_commandList->m_commandList->RSSetViewports( 1 , &m_viewPort );
+	m_commandList->m_commandList->RSSetScissorRects( 1 , &m_scisrroRec );
+
 	D3D12_RESOURCE_BARRIER barrier;
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -424,6 +515,8 @@ void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 	rtv.ptr += ( ( UINT ) m_RTVDescriptorSize * ( UINT ) m_currentBackBufferIndex );
 	
 	m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
+	m_commandList->m_commandList->OMSetRenderTargets( 1 , &rtv , FALSE , nullptr );
+	m_commandList->m_commandList->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -527,7 +620,7 @@ bool RenderContextDX12::CheckTearingSupport()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::UpdateRenderTargetViews()
+void RenderContextDX12::CreateRenderTargetViews()
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 //	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -542,6 +635,64 @@ void RenderContextDX12::UpdateRenderTargetViews()
 		t_backBuffers[ backBufferIndex ] = backBuffer;
 		rtvHandle.ptr += m_RTVDescriptorSize;
 	}
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateRootSignature()
+{
+
+// 	D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
+// 	featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+// 	if ( S_OK != m_device->CheckFeatureSupport( D3D12_FEATURE_ROOT_SIGNATURE , &featureData , sizeof( featureData ) ) )
+// 	{
+// 		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+// 	}
+
+	// Allow input layout and deny unnecessary access to certain pipeline stages.
+	D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
+		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+
+	// A single 32-bit constant root parameter that is used by the vertex shader.
+
+	D3D12_ROOT_SIGNATURE_DESC rootSignatureDescription{};
+	
+	D3D12_ROOT_PARAMETER rootParameters[ 1 ] = {};
+	
+	rootParameters[ 0 ].Constants.Num32BitValues = sizeof( Mat44 ) / sizeof( float );
+	rootParameters[ 0 ].Constants.RegisterSpace = 0;
+	rootParameters[ 0 ].Constants.ShaderRegister = 0;
+	rootParameters[ 0 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameters[ 0 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+
+	rootSignatureDescription.NumParameters		=  _countof( rootParameters );
+	rootSignatureDescription.pParameters		= rootParameters;
+	rootSignatureDescription.NumStaticSamplers	= 0;
+	rootSignatureDescription.pStaticSamplers	= nullptr;
+	rootSignatureDescription.Flags				= rootSignatureFlags;
+
+	// Serialize the root signature.
+	GUARANTEE_OR_DIE( S_OK == D3D12SerializeRootSignature( &rootSignatureDescription , D3D_ROOT_SIGNATURE_VERSION_1 , &m_rootSignatureBlob , &m_errorBlob ) , "Serlize Root siganture failed" );
+	
+	// Create the root signature.
+	size_t size = m_rootSignatureBlob->GetBufferSize();
+	HRESULT rootSignatureCreation = m_device->CreateRootSignature( 0 ,
+													m_rootSignatureBlob->GetBufferPointer() ,
+													m_rootSignatureBlob->GetBufferSize() ,
+													IID_PPV_ARGS( &m_rootSignature ) );
+		
+	GUARANTEE_OR_DIE( rootSignatureCreation == S_OK , "Root Signature Creation Failed" );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::TestDraw()
+{
+	m_commandList->m_commandList->DrawInstanced( 3 , 1 , 0 , 0 );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

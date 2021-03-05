@@ -127,6 +127,28 @@ void Rgba8::CycleRGBChannelsAntiClockwise()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
+void Rgba8::LerpColor( Rgba8 startColor , Rgba8 endColor , float lerpValue )
+{
+	Vec4 startColorFloats;
+	Vec4 endColorFloats;
+	
+	startColorFloats = startColor.GetAsNormalizedFloat4();
+	endColorFloats = endColor.GetAsNormalizedFloat4();
+	float range[ 4 ];
+
+	range[ 0 ] = endColorFloats.x - startColorFloats.x;
+	range[ 1 ] = endColorFloats.y - startColorFloats.y;
+	range[ 2 ] = endColorFloats.z - startColorFloats.z;
+	range[ 3 ] = endColorFloats.w - startColorFloats.w;
+	
+	r = startColor.r + static_cast< uchar >( ( lerpValue * range[ 0 ] ) * 255.f );
+	g = startColor.g + static_cast< uchar >( ( lerpValue * range[ 1 ] ) * 255.f );
+	b = startColor.b + static_cast< uchar >( ( lerpValue * range[ 2 ] ) * 255.f );
+	a = startColor.a + static_cast< uchar >( ( lerpValue * range[ 3 ] ) * 255.f );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
 void Rgba8::LerpColorOverTime( Rgba8 startColor , Rgba8 endColor , float lerpDuration , Timer* timer /*= &Clock::g_theMasterClock */ )
 {
 	if ( lerpDuration <= 0.f )

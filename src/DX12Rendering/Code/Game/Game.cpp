@@ -4,6 +4,7 @@
 #include "Game/Game.hpp"
 #include "Game/GameCommon.hpp"
 #include "Game/TheApp.hpp"
+#include "Engine/Math/MathUtils.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -41,7 +42,12 @@ void Game::InitializeCameras()
 
 void Game::Update( float deltaSeconds )
 {
-	if ( ( m_colorLerpTimer >= 0.f ) && ( m_colorLerpTimer <= 3.f ) )
+	float time = ( float ) GetCurrentTimeSeconds();
+	float lerpValue = SinDegrees( time * 100.f );
+	lerpValue *= lerpValue;
+	m_clearScreenColor.LerpColor( ORANGE , PURPLE , lerpValue );
+	
+	/*if ( ( m_colorLerpTimer >= 0.f ) && ( m_colorLerpTimer <= 3.f ) )
 	{
 		m_clearScreenColor.LerpColorOverTime( RED , GREEN , 3.f , m_colorLerpTimer );
 	}
@@ -56,7 +62,7 @@ void Game::Update( float deltaSeconds )
 	else
 	{
 		m_colorLerpTimer = 0.f;
-	}
+	}*/
 	m_colorLerpTimer += deltaSeconds;
 }
 
@@ -65,9 +71,7 @@ void Game::Update( float deltaSeconds )
 void Game::Render() const
 {
 	g_theRenderer->ClearScreen( m_clearScreenColor );
-	//g_theRenderer->BeginCamera( m_gameCamera );
-	//g_theRenderer->SetRasterState( FILL_SOLID );
-	//g_theRenderer->EndCamera( m_gameCamera );
+	g_theRenderer->TestDraw();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
