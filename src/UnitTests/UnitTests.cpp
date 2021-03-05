@@ -40,41 +40,40 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 Window* g_theWindow = nullptr;
 extern RenderContextDX12* g_theRenderer;
 
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-TEST_MODULE_INITIALIZE( RenderContextDX12Init )
-{
-	if ( g_theWindow == nullptr )
-	{
-		g_theWindow = new Window();
-	}
-	Logger::WriteMessage( "Window initialized" );
-
-	if ( g_theRenderer == nullptr )
-	{
-		g_theRenderer = new RenderContextDX12();
-	}
-	Assert::IsNotNull( g_theRenderer , L"Renderer initialization Failed" , LINE_INFO() );
-	Logger::WriteMessage( "Renderer Initialized" );
-
-	g_theRenderer->m_window = g_theWindow;
-}
-
-//--------------------------------------------------------------------------------------------------------------------------------------------
-
-TEST_MODULE_CLEANUP( RenderContextDX12Destruction )
-{
-	g_theRenderer->Shutdown();
-	SAFE_RELEASE_POINTER( g_theRenderer );
-	Logger::WriteMessage( "Renderer Destroyed" );
-}
-
 namespace UnitTests
 {
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	TEST_MODULE_INITIALIZE( RenderContextDX12Init )
+	{
+		if ( g_theWindow == nullptr )
+		{
+			g_theWindow = new Window();
+		}
+		Logger::WriteMessage( "Window initialized" );
+
+		if ( g_theRenderer == nullptr )
+		{
+			g_theRenderer = new RenderContextDX12();
+		}
+		Assert::IsNotNull( g_theRenderer , L"Renderer initialization Failed" , LINE_INFO() );
+		Logger::WriteMessage( "Renderer Initialized" );
+
+		g_theRenderer->m_window = g_theWindow;
+	}
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+
+	TEST_MODULE_CLEANUP( RenderContextDX12Destruction )
+	{
+		g_theRenderer->Shutdown();
+		SAFE_RELEASE_POINTER( g_theRenderer );
+		Logger::WriteMessage( "Renderer Destroyed" );
+	}
+
 	TEST_CLASS(UnitTests)
 	{
 //--------------------------------------------------------------------------------------------------------------------------------------------
-	
 
 			HRESULT m_resourceInit;
 	public:
@@ -107,7 +106,7 @@ namespace UnitTests
 			Logger::WriteMessage( "DirectX 12 Command Queue Creation Successful" );
 		}	
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00040DescriptorCreation )
+		TEST_METHOD( A00040_DescriptorCreation )
 		{
 
 			g_theRenderer->m_RTVDescriptorHeap = new DescriptorHeapDX12( g_theRenderer , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , g_theRenderer->m_numBackBufferFrames );
@@ -117,7 +116,7 @@ namespace UnitTests
 			Logger::WriteMessage( "Descriptor Heap Creation Successful" );
 		}
 //--------------------------------------------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00050RTVCreation )
+		TEST_METHOD( A00050_RTVCreation )
 		{
 			//g_theRenderer->UpdateRenderTargetViews();
 			
@@ -128,7 +127,7 @@ namespace UnitTests
 				Logger::WriteMessage( "Render Target View Creation Successful" );
 		}
 //--------------------------------------------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00060CommandAllocatorCreation )
+		TEST_METHOD( A00060_CommandAllocatorCreation )
 		{
 			for ( int index = 0; index < g_theRenderer->m_numBackBufferFrames; ++index )
 			{
@@ -138,7 +137,7 @@ namespace UnitTests
 			}
 		}
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00070RootSignatureCreation )
+		TEST_METHOD( A00070_RootSignatureCreation )
 		{
 			g_theRenderer->CreateRootSignature();
 			Assert::IsNotNull( g_theRenderer->m_rootSignature , L"Root Signature Creation Failed" );
