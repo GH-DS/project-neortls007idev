@@ -37,6 +37,8 @@ public:
 	void CycleRGBChannelsClockwise();
 	void CycleRGBChannelsAntiClockwise();
 
+	void LerpColor( Rgba8 startColor , Rgba8 endColor , float lerpValue );
+
 	void LerpColorOverTime( Rgba8 startColor , Rgba8 endColor , float lerpDuration , Timer* timer );
 	void LerpColorOverTime( Rgba8 startColor , Rgba8 endColor , float maxDuration , float currentTime );
 	Vec4 GetAsNormalizedFloat4() const;
