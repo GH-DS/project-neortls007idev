@@ -130,7 +130,7 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	m_RTVDescriptorHeap = new DescriptorHeapDX12( this , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , m_numBackBufferFrames );
 	m_RTVDescriptorSize = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
  	
- 	UpdateRenderTargetViews();
+ 	CreateRenderTargetViews();
 	
 	for ( int index = 0; index < m_numBackBufferFrames; ++index )
 	{
@@ -450,6 +450,20 @@ void RenderContextDX12::Flush( uint64_t& fenceValue )
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
+void RenderContextDX12::ClearDepth( CommandListDX12* commandList , D3D12_CPU_DESCRIPTOR_HANDLE dsv , FLOAT depth /*= 1.0f */ )
+{
+
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::UpdateBufferResource( CommandListDX12* commandList , ID3D12Resource** pDestinationResource , ID3D12Resource** pIntermediateResource , size_t numElements , size_t elementSize , const void* bufferData , D3D12_RESOURCE_FLAGS flags /*= D3D12_RESOURCE_FLAG_NONE */ )
+{
+
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
 
 void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 {
@@ -606,7 +620,7 @@ bool RenderContextDX12::CheckTearingSupport()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::UpdateRenderTargetViews()
+void RenderContextDX12::CreateRenderTargetViews()
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 //	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -677,40 +691,7 @@ void RenderContextDX12::CreateRootSignature()
 
 void RenderContextDX12::TestDraw()
 {
-//	m_commandAllocators[ m_currentBackBufferIndex ]->m_commandAllocator->Reset();
-//	m_commandList->m_commandList->Reset( m_commandAllocators[ m_currentBackBufferIndex ]->m_commandAllocator , m_pipelineState );
-
-
-	// RECOURCE BARRIER MIGT BEE NEEDED
-//	D3D12_RESOURCE_BARRIER barrier;
-//	barrier.Transition.pResource = t_backBuffers[ m_currentBackBufferIndex ];
-//	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-//	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-//	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-//	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-//	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-//	m_commandList->m_commandList->ResourceBarrier( 1 , &barrier );
-//
-//	// clearScreen
-//
-//	UINT strideRTV = m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
-//	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_RTVDescriptorHeap->m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-//	rtvHandle.ptr += strideRTV * m_currentBackBufferIndex;
-	
 	m_commandList->m_commandList->DrawInstanced( 3 , 1 , 0 , 0 );
-
-//	Present();
-//  Flush();
-//	barrier.Transition.pResource = m_rtvResource[ m_frameIndex ];
-//	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-//	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-//	m_commandList->ResourceBarrier( 1 , &barrier );
-//	GUARANTEE_OR_DIE( m_commandList->Close() , "close command list failed" );
-//
-//
-//
-//	CommandListDX12* ppCommandLists[] = { m_commandList };
-//	m_commandQueue->ExecuteCommandLists( _countof( ppCommandLists ) , ppCommandLists );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

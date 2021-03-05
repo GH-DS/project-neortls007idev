@@ -21,6 +21,7 @@
  #include <dxgi1_4.h>
  #include <dxcapi.h>
 #include "Engine/RendererDX12/DescriptorHeapDX12.hpp"
+#include "Engine/RendererDX12/CommandAllocatorDX12.hpp"
  #pragma comment( lib, "dxcompiler.lib" )  
  #pragma comment( lib, "d3d12.lib" )      
  #pragma comment( lib, "dxgi.lib" )  
@@ -98,22 +99,50 @@ namespace UnitTests
 			Logger::WriteMessage( "DirectX 12 GPU Adapter device Creation Successful" );
 		}			
 //----------------------------------------------------------------------------------------------------------
-// 		TEST_METHOD( A00030_CommandQueueCreation )
-// 		{
-// 			g_theRenderer->m_commandQueue = g_theRenderer->CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
-// 			Assert::IsNotNull( g_theRenderer->m_commandQueue , L"Command Queue Creation Failed" );
-// 			Logger::WriteMessage( "DirectX 12 Command Queue Creation Successful" );
-// 		}	
-// //----------------------------------------------------------------------------------------------------------
-// 		TEST_METHOD( A00040DescriptorCreation )
-// 		{
-// 
-// 			g_theRenderer->m_RTVDescriptorHeap = new DescriptorHeapDX12( g_theRenderer , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , g_theRenderer->m_numBackBufferFrames );
-// 			g_theRenderer->m_RTVDescriptorSize = g_theRenderer->m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
-// 
-// 			Assert::IsNotNull( g_theRenderer->m_RTVDescriptorHeap , L"Descriptor Heap Creation Failed" );
-// 			Logger::WriteMessage( "Descriptor Heap Creation Successful" );
-// 		}
+		TEST_METHOD( A00030_CommandQueueCreation )
+		{
+			g_theRenderer->m_commandQueue = g_theRenderer->CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
+			Assert::IsNotNull( g_theRenderer->m_commandQueue , L"Command Queue Creation Failed" );
+			Logger::WriteMessage( "DirectX 12 Command Queue Creation Successful" );
+		}	
+//----------------------------------------------------------------------------------------------------------
+		TEST_METHOD( A00040DescriptorCreation )
+		{
+
+			g_theRenderer->m_RTVDescriptorHeap = new DescriptorHeapDX12( g_theRenderer , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , g_theRenderer->m_numBackBufferFrames );
+			g_theRenderer->m_RTVDescriptorSize = g_theRenderer->m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
+
+			Assert::IsNotNull( g_theRenderer->m_RTVDescriptorHeap , L"Descriptor Heap Creation Failed" );
+			Logger::WriteMessage( "Descriptor Heap Creation Successful" );
+		}
+//--------------------------------------------------------------------------------------------------------------------------------------------
+		TEST_METHOD( A00050RTVCreation )
+		{
+			//g_theRenderer->UpdateRenderTargetViews();
+			
+			for ( int backBufferIndex = 0; backBufferIndex < g_theRenderer->m_numBackBufferFrames; ++backBufferIndex )
+			{
+			//	Assert::IsNotNull( g_theRenderer->t_backBuffers[ backBufferIndex ] , L"Render Target View Creation Failed" );
+			}
+				Logger::WriteMessage( "Render Target View Creation Successful" );
+		}
+//--------------------------------------------------------------------------------------------------------------------------------------------
+		TEST_METHOD( A00060CommandAllocatorCreation )
+		{
+			for ( int index = 0; index < g_theRenderer->m_numBackBufferFrames; ++index )
+			{
+				g_theRenderer->m_commandAllocators[ index ] = new CommandAllocatorDX12( g_theRenderer , D3D12_COMMAND_LIST_TYPE_DIRECT );
+				Assert::IsNotNull( g_theRenderer->m_commandAllocators[ index ] , L"Command Allocator Creation Failed" );
+				Logger::WriteMessage( "Command Allocator Creation Successful" );
+			}
+		}
+//----------------------------------------------------------------------------------------------------------
+		TEST_METHOD( A00070RootSignatureCreation )
+		{
+			g_theRenderer->CreateRootSignature();
+			Assert::IsNotNull( g_theRenderer->m_rootSignature , L"Root Signature Creation Failed" );
+			Logger::WriteMessage( "Root Signature Creation Successful" );
+		}
 	};
 }
 

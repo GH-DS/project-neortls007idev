@@ -47,6 +47,11 @@ public:
 	void					Present();
 	void					Flush( uint64_t& fenceValue );
 
+	void					ClearDepth( CommandListDX12* commandList ,	D3D12_CPU_DESCRIPTOR_HANDLE dsv , FLOAT depth = 1.0f );
+
+	void					UpdateBufferResource( CommandListDX12* commandList , ID3D12Resource** pDestinationResource , ID3D12Resource** pIntermediateResource ,
+													size_t numElements , size_t elementSize , const void* bufferData , D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE );
+
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //			CAMERA METHODS
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -67,7 +72,7 @@ public:
 	bool					CheckTearingSupport();
 	bool					IsVSyncEnabled()											{ return m_isVsyncEnabled; }
 	bool					HasTearingSupport()											{ return m_hasTearingSupport; }
-	void					UpdateRenderTargetViews();
+	void					CreateRenderTargetViews();
 	void					CreateRootSignature();
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	void					TestDraw();
@@ -112,6 +117,18 @@ public:
 
 	D3D12_VIEWPORT								m_viewPort;
 	D3D12_RECT									m_scisrroRec;
+
+	// Vertex buffer for the cube.
+	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView = {};
+	ID3D12Resource*								m_vertexBuffer											= nullptr;
+	// Index buffer for the cube.
+	D3D12_INDEX_BUFFER_VIEW m_IndexBufferView = {};
+	ID3D12Resource*								m_indexBuffer											= nullptr;
+
+	// Depth buffer.
+	ID3D12Resource*								m_DepthBuffer											= nullptr;
+	// Descriptor heap for depth buffer.
+	ID3D12DescriptorHeap*						m_DSVHeap												= nullptr;
 private:
 	
 };
