@@ -32,3 +32,5 @@ void FenceDX12::WaitForFenceValue( uint64_t fenceValue , void* fenceEvent , std:
 		::WaitForSingleObject( reinterpret_cast< HANDLE >( fenceEvent ) , static_cast< DWORD >( duration.count() ) );
 	}
 }
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
