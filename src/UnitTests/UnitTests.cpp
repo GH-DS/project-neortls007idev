@@ -78,7 +78,7 @@ namespace UnitTests
 			HRESULT m_resourceInit;
 	public:
 //----------------------------------------------------------------------------------------------------------			
-		TEST_METHOD( A00000_Init )
+		TEST_METHOD( A99999_Init )
 		{
 			Logger::WriteMessage( "Marker 0" );
 			m_resourceInit = g_theRenderer->CreateDevice();
@@ -86,14 +86,14 @@ namespace UnitTests
 			Logger::WriteMessage( "DirectX 12 Device Creation Successful" );
 		}
 //------//----------------------------------------------------------------------------------------------------
- 		//TEST_METHOD( A00010_RendererCheckWARPGraphicsAdapters )
+ 		//TEST_METHOD( A99989_RendererCheckWARPGraphicsAdapters )
  		//{
  		//	m_resourceInit = g_theRenderer->CheckGraphicsAdapters( true );
  		//	Assert::AreEqual( m_resourceInit , S_OK , L"WARP Adapter Creation Check Failed" );
 		//	Logger::WriteMessage( "DirectX 12 WARP Adapter device Creation Successful" );
  		//}
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00020_RendererCheckGPUGraphicsAdapters )
+		TEST_METHOD( A99979_RendererCheckGPUGraphicsAdapters )
 		{
 			Logger::WriteMessage( "Marker 2" );
 			m_resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
@@ -101,7 +101,7 @@ namespace UnitTests
 			Logger::WriteMessage( "DirectX 12 GPU Adapter device Creation Successful" );
 		}			
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00030_CommandQueueCreation )
+		TEST_METHOD( A99969_CommandQueueCreation )
 		{
 			Logger::WriteMessage( "Marker 3" );
 			g_theRenderer->m_commandQueue = g_theRenderer->CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
@@ -109,7 +109,7 @@ namespace UnitTests
 			Logger::WriteMessage( "DirectX 12 Command Queue Creation Successful" );
 		}	
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00040_DescriptorCreation )
+		TEST_METHOD( A99959_DescriptorCreation )
 		{
 			Logger::WriteMessage( "Marker 4" );
 			g_theRenderer->m_RTVDescriptorHeap = new DescriptorHeapDX12( g_theRenderer , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , g_theRenderer->m_numBackBufferFrames );
@@ -119,7 +119,7 @@ namespace UnitTests
 			Logger::WriteMessage( "Descriptor Heap Creation Successful" );
 		}
 //--------------------------------------------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00050_RTVCreation )
+		TEST_METHOD( A99949_RTVCreation )
 		{
 			Logger::WriteMessage( "Marker 5" );
 			g_theRenderer->CreateRenderTargetViews();
@@ -131,7 +131,7 @@ namespace UnitTests
 				Logger::WriteMessage( "Render Target View Creation Successful" );
 		}
 //--------------------------------------------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00060_CommandAllocatorCreation )
+		TEST_METHOD( A99939_CommandAllocatorCreation )
 		{
 			Logger::WriteMessage( "Marker 6" );
 			for ( int index = 0; index < g_theRenderer->m_numBackBufferFrames; ++index )
@@ -142,7 +142,7 @@ namespace UnitTests
 			}
 		}
 //----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00070_RootSignatureCreation )
+		TEST_METHOD( A99929_RootSignatureCreation )
 		{
 			Logger::WriteMessage( "Marker 7" );
 			g_theRenderer->CreateRootSignature();
