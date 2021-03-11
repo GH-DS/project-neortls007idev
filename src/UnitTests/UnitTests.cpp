@@ -85,44 +85,44 @@ namespace UnitTests
 			m_resourceInit = g_theRenderer->CreateDevice();
 			Assert::AreEqual( m_resourceInit , S_OK , L"DirectX 12 Device Creation Failed" );
 			Logger::WriteMessage( "DirectX 12 Device Creation Successful" );
-		}
-//------//----------------------------------------------------------------------------------------------------
- 		TEST_METHOD( A00010_RendererCheckWARPGraphicsAdapters )
- 		{
+	//	}
+//--//----//----------------------------------------------------------------------------------------------------
+ 	//	TEST_METHOD( A00010_RendererCheckWARPGraphicsAdapters )
+ 	//	{
+	//		Logger::WriteMessage( "Marker 2" );
+ 	//		m_resourceInit = g_theRenderer->CheckGraphicsAdapters( true );
+ 	//		Assert::AreEqual( m_resourceInit , S_OK , L"WARP Adapter Creation Check Failed" );
+	//		Logger::WriteMessage( "DirectX 12 WARP Adapter device Creation Successful" );
+ 	//	}
+//--//--------------------------------------------------------------------------------------------------------
+	//	TEST_METHOD( A00020_RendererCheckGPUGraphicsAdapters )
+	//	{
 			Logger::WriteMessage( "Marker 2" );
- 			m_resourceInit = g_theRenderer->CheckGraphicsAdapters( true );
- 			Assert::AreEqual( m_resourceInit , S_OK , L"WARP Adapter Creation Check Failed" );
-			Logger::WriteMessage( "DirectX 12 WARP Adapter device Creation Successful" );
- 		}
-//----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00020_RendererCheckGPUGraphicsAdapters )
-		{
-			//Logger::WriteMessage( "Marker 2" );
-			//m_resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
-			//Assert::AreEqual( m_resourceInit , S_OK , L"Hardware Adapter Creation Check Failed" );
-			//Logger::WriteMessage( "DirectX 12 GPU Adapter device Creation Successful" );
-		}			
-//----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00030_CommandQueueCreation )
-		{
+			m_resourceInit = g_theRenderer->CheckGraphicsAdapters( false );
+			Assert::AreEqual( m_resourceInit , S_OK , L"Hardware Adapter Creation Check Failed" );
+			Logger::WriteMessage( "DirectX 12 GPU Adapter device Creation Successful" );
+	//	}			
+//--//--------------------------------------------------------------------------------------------------------
+	//	TEST_METHOD( A00030_CommandQueueCreation )
+	//	{
 			Logger::WriteMessage( "Marker 3" );
 			g_theRenderer->m_commandQueue = g_theRenderer->CreateCommandQueue( DX12_COMMAND_LIST_TYPE_DIRECT );
 			Assert::IsNotNull( g_theRenderer->m_commandQueue , L"Command Queue Creation Failed" );
 			Logger::WriteMessage( "DirectX 12 Command Queue Creation Successful" );
-		}	
-//----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00040_DescriptorCreation )
-		{
+	//	}	
+//--//--------------------------------------------------------------------------------------------------------
+	//	TEST_METHOD( A00040_DescriptorCreation )
+	//	{
 			Logger::WriteMessage( "Marker 4" );
 			g_theRenderer->m_RTVDescriptorHeap = new DescriptorHeapDX12( g_theRenderer , D3D12_DESCRIPTOR_HEAP_TYPE_RTV , g_theRenderer->m_numBackBufferFrames );
 			g_theRenderer->m_RTVDescriptorSize = g_theRenderer->m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_RTV );
 
 			Assert::IsNotNull( g_theRenderer->m_RTVDescriptorHeap , L"Descriptor Heap Creation Failed" );
 			Logger::WriteMessage( "Descriptor Heap Creation Successful" );
-		}
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00045_SwapChainCreation )
-		{
+	//	}
+//--//------------------------------------------------------------------------------------------------------------------------------------------
+	//	TEST_METHOD( A00045_SwapChainCreation )
+	//	{
 // 			Logger::WriteMessage( "Marker 4.5" );
 // 			g_theRenderer->CreateSwapChain( g_theRenderer->m_commandQueue , g_theRenderer->m_numBackBufferFrames );
 // 			g_theRenderer->m_currentBackBufferIndex = ( uint8_t ) g_theRenderer->t_swapchain->GetCurrentBackBufferIndex();
@@ -132,10 +132,10 @@ namespace UnitTests
 // 				Assert::IsNotNull( g_theRenderer->t_backBuffers[ backBufferIndex ] , L"Render Target View Creation Failed" );
 // 			}
 // 			Logger::WriteMessage( "Render Target View Creation Successful" );
-		}
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00050_RTVCreation )
-		{
+	//	}
+//--//------------------------------------------------------------------------------------------------------------------------------------------
+	//	TEST_METHOD( A00050_RTVCreation )
+	//	{
 // 			Logger::WriteMessage( "Marker 5" );
 // 			g_theRenderer->CreateRenderTargetViews();
 // 			
@@ -144,10 +144,10 @@ namespace UnitTests
 // 				Assert::IsNotNull( g_theRenderer->t_backBuffers[ backBufferIndex ] , L"Render Target View Creation Failed" );
 // 			}
 // 				Logger::WriteMessage( "Render Target View Creation Successful" );
-		}
-//--------------------------------------------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00060_CommandAllocatorCreation )
-		{
+	//	}
+//--//------------------------------------------------------------------------------------------------------------------------------------------
+	//	TEST_METHOD( A00060_CommandAllocatorCreation )
+	//	{
 			Logger::WriteMessage( "Marker 6" );
 			for ( int index = 0; index < g_theRenderer->m_numBackBufferFrames; ++index )
 			{
@@ -155,10 +155,10 @@ namespace UnitTests
 				Assert::IsNotNull( g_theRenderer->m_commandAllocators[ index ] , L"Command Allocator Creation Failed" );
 				Logger::WriteMessage( "Command Allocator Creation Successful" );
 			}
-		}
-//----------------------------------------------------------------------------------------------------------
-		TEST_METHOD( A00070_RootSignatureCreation )
-		{
+	//	}
+//--//--------------------------------------------------------------------------------------------------------
+	//	TEST_METHOD( A00070_RootSignatureCreation )
+	//	{
 			Logger::WriteMessage( "Marker 7" );
 			g_theRenderer->CreateRootSignature();
 			Assert::IsNotNull( g_theRenderer->m_rootSignature , L"Root Signature Creation Failed" );
