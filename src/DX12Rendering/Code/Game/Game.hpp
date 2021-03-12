@@ -25,9 +25,14 @@ public:
 	float m_colorLerpTimer		= 0.f;
 	float m_framTime			= 0.f;
 
-	mutable Camera				m_gameCamera;
-	std::vector<Vertex_PCU>		m_cubeMeshVerts;
-	std::vector<uint>			m_cubeMeshIndices;
+	mutable Camera						m_gameCamera;
+	Transform							m_cubeTestTransform;
+	mutable std::vector<Vertex_PCU>		m_cubeMeshVerts;
+	mutable std::vector<uint>			m_cubeMeshIndices;
+	
+	mutable std::vector<Vertex_PCU>		m_modelMeshVerts;
+	mutable std::vector<uint>			m_modelMeshIndices;
+	Transform							m_modelTestTransform;
 
 private:
 	//mutable Camera				m_gameCamera;

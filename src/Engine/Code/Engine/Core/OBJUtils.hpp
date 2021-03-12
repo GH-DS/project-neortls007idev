@@ -33,5 +33,8 @@ void				GetNormalForFaceVert( const SMikkTSpaceContext* pContext , float fvNormO
 void				SetTangent( const SMikkTSpaceContext* pContext , const float fvTangent[] , const float fSign , const int iFace , const int iVert );
 void				GenerateTangentsForVertexArray( std::vector<VertexMaster>& vertices );
 
+void				LoadObjFileIntoVertexBuffer( std::vector<VertexMaster>& vertexBuffer , std::vector<uint>& indices ,
+												 MeshBuilderOptions options , std::string objFilePath );
+
 void				LoadOBJWithMaterial( GPUMesh* mesh , std::vector<tinyobj::shape_t>& shapes , std::vector<tinyobj::material_t>& material );
 //--------------------------------------------------------------------------------------------------------------------------------------------

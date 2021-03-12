@@ -123,7 +123,7 @@ void TheApp::Update( float deltaSeconds )
 	else if ( m_isSloMo == true )				{ deltaSeconds /= 10.f; }
 	if ( m_isSpeedMo )							{ deltaSeconds = deltaSeconds * 4.0f; }
 
-	g_theGame->Update( deltaSeconds );
+	g_theGame->Update( 0.01667f );
 
 	g_theInput->EndFrame();
 }

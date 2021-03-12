@@ -9,6 +9,7 @@
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/RendererDX12/CommandListDX12.hpp"
 #include "Engine/Renderer/RenderContext.hpp"
+#include "Engine/Core/OBJUtils.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -25,8 +26,22 @@ Game::Game()
 	m_clearScreenColor = RED;
 	m_colorLerpTimer = 0.f;
 
+	m_cubeTestTransform.SetPosition( Vec3( 0.f , 0.f , 90.f ) );
 	AABB3 box( Vec3( -0.5f , -0.5f , -0.5f ) , Vec3( 0.5f , 0.5f , 0.5f ) );
-	CreateCuboid( m_cubeMeshVerts , m_cubeMeshIndices , box , WHITE );
+	Rgba8 tint( 255 , 255 , 255 , 255 );
+
+	AddCubeVerts( m_cubeMeshVerts , nullptr );
+	uint* indices = GetCubeIndices();
+	for( int index = 0 ; index < 36 ; index++ )
+	{
+		m_cubeMeshIndices.push_back( indices[ index ] );
+	}
+
+	std::vector<VertexMaster> modelverts;
+	MeshBuilderOptions buildMesh;
+	LoadObjFileIntoVertexBuffer( modelverts , m_modelMeshIndices , buildMesh , "Data/Models/scifiFighter/mesh.obj" );
+	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts , modelverts );
+	m_modelTestTransform.SetPosition( Vec3( 0.f , 0.f , 75.f ) );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -41,8 +56,8 @@ Game::~Game()
 void Game::InitializeCameras()
 {
 	m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
-	m_gameCamera.SetOrthoView( 540.f , CLIENT_ASPECT );
-	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 0.f ) );
+	//m_gameCamera.SetOrthoView( 540.f , CLIENT_ASPECT );
+	m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
 	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
 }
 
@@ -72,52 +87,28 @@ void Game::Update( float deltaSeconds )
 	{
 		m_colorLerpTimer = 0.f;
 	}*/
-	m_clearScreenColor = BLACK;
+	//m_clearScreenColor = BLACK;
 	m_colorLerpTimer += deltaSeconds;
 
-	
+	m_cubeTestTransform.m_yaw += deltaSeconds;
+	m_modelTestTransform.m_yaw += deltaSeconds;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 void Game::Render() const
 {
-	g_theRenderer->ClearScreen( m_clearScreenColor );
+	g_theRenderer->ClearScreen( BLACK );
 	UpdateCameraConstantBufferData();
 	UpdateFrameTime( m_framTime );
-	UpdateModelMatrix( Mat44::IDENTITY );
-	AABB2 box( -200.5f , -200.5f , 200.5f , 200.5f );
-	std::vector<Vertex_PCU> testAABB;
+	UpdateModelMatrix( m_modelTestTransform.GetAsMatrix() , m_clearScreenColor );
 
-	AppendVertsForAABB2( testAABB , box , WHITE );
-	g_theRenderer->CreateVertexBufferForVertexArray( testAABB );
-	g_theRenderer->DrawVertexArray( testAABB );
-
-	AABB2 box2( -100.5f , -100.5f , 100.5f , 100.5f );
-	std::vector<Vertex_PCU> testAABBindexedVerts;
-	std::vector<uint> testAABBindices;
-
-	const Vertex_PCU boxVerts[ 4 ] = {
-								Vertex_PCU( Vec3( box2.m_mins.x,box2.m_mins.y,0.f ) , RED , Vec2( 0.f, 0.f ) ),
-								Vertex_PCU( Vec3( box2.m_maxs.x,box2.m_mins.y,0.f ) , RED , Vec2( 1.f, 0.f ) ),
-								Vertex_PCU( Vec3( box2.m_mins.x,box2.m_maxs.y,0.f ) , RED , Vec2( 0.f, 1.f ) ),
-								Vertex_PCU( Vec3( box2.m_maxs.x,box2.m_maxs.y,0.f ) , RED , Vec2( 1.f, 1.f ) ) };
-
-	for ( int index = 0; index < 4; index++ )
-	{
-		testAABBindexedVerts.push_back( boxVerts[ index ] );
-	}
-	
-	testAABBindices.push_back( 0 );
-	testAABBindices.push_back( 1 );
-	testAABBindices.push_back( 2 );
-
-	testAABBindices.push_back( 1 );
-	testAABBindices.push_back( 3 );
-	testAABBindices.push_back( 2 );
-	g_theRenderer->CreateVertexBufferForVertexArray( testAABBindexedVerts );
-	g_theRenderer->CreateIndexBufferForIndexArray( testAABBindices );
-	g_theRenderer->DrawIndexedVertexArray( testAABBindexedVerts , testAABBindices );
+	g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts );
+	g_theRenderer->DrawVertexArray( m_modelMeshVerts );
+	g_theRenderer->CreateVertexBufferForVertexArray( m_cubeMeshVerts );
+	g_theRenderer->CreateIndexBufferForIndexArray( m_cubeMeshIndices );
+	UpdateModelMatrix( m_cubeTestTransform.GetAsMatrix() );
+	g_theRenderer->DrawIndexedVertexArray( m_cubeMeshVerts , m_cubeMeshIndices );
 	//g_theRenderer->TestDraw();
 }
 

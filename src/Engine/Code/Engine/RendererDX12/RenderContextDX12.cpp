@@ -186,6 +186,7 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	};
 
 	D3D12_INPUT_LAYOUT_DESC inputlayoutDesc{ inputLayout , 3 };
+	CD3DX12_DEPTH_STENCIL_DESC dsvDesc = CD3DX12_DEPTH_STENCIL_DESC( D3D12_DEFAULT );
 
 	m_pipelineStateDesc.InputLayout = inputlayoutDesc;
 	m_pipelineStateDesc.pRootSignature = m_rootSignature;
@@ -193,18 +194,58 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	m_pipelineStateDesc.PS = m_currentShader->m_fragmentStage.GetAsD3D12ByteCode();
 	m_pipelineStateDesc.RasterizerState = m_rasterizerStateDesc;
 	m_pipelineStateDesc.BlendState = blendDesc;
-	m_pipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
-	m_pipelineStateDesc.DepthStencilState.StencilEnable = FALSE;
+	m_pipelineStateDesc.DepthStencilState = dsvDesc;
 	m_pipelineStateDesc.SampleMask = UINT_MAX;
 	m_pipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	m_pipelineStateDesc.NumRenderTargets = 1;
 	m_pipelineStateDesc.RTVFormats[ 0 ] = DXGI_FORMAT_R8G8B8A8_UNORM;
 	m_pipelineStateDesc.SampleDesc.Count = 1;
+	m_pipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	resourceInit |= m_device->CreateGraphicsPipelineState( &m_pipelineStateDesc , IID_PPV_ARGS( &m_pipelineState ) );
 	
 	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , m_pipelineState , D3D12_COMMAND_LIST_TYPE_DIRECT );
 	CreateFenceEventHandle();
-	//CreateVertexBufferForVertexArray();
+	
+// 	m_depthStencilDesc.DepthEnable = TRUE; // enable depth testing
+// 	m_depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL; // can write depth data to all of the depth/stencil buffer
+// 	m_depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS; // pixel fragment passes depth test if destination pixel's depth is less than pixel fragment's
+// 	m_depthStencilDesc.StencilEnable = FALSE; // disable stencil test
+// 	m_depthStencilDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK; // a default stencil read mask (doesn't matter at this point since stencil testing is turned off)
+// 	m_depthStencilDesc.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK; // a default stencil write mask (also doesn't matter)
+// 	const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = // a stencil operation structure, again does not really matter since stencil testing is turned off
+// 	{ D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS };
+// 	m_depthStencilDesc.FrontFace = defaultStencilOp; // both front and back facing polygons get the same treatment
+// 	m_depthStencilDesc.BackFace = defaultStencilOp;
+
+	D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+	dsvHeapDesc.NumDescriptors = 1;
+	dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+	m_device->CreateDescriptorHeap( &dsvHeapDesc , IID_PPV_ARGS( &m_dsvHeap ) );
+
+	D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+	depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+	depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+	depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+	depthOptimizedClearValue.DepthStencil.Stencil = 0;
+
+	CD3DX12_HEAP_PROPERTIES dsvHeapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_DEFAULT );
+	CD3DX12_RESOURCE_DESC  dsvTex = CD3DX12_RESOURCE_DESC::Tex2D( DXGI_FORMAT_D32_FLOAT , m_window->GetClientWidth() , m_window->GetClientHeight() , 1 , 0 , 1 , 0 , D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL );
+
+	m_device->CreateCommittedResource(
+		&dsvHeapProp ,
+		D3D12_HEAP_FLAG_NONE ,
+		&dsvTex ,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE ,
+		&depthOptimizedClearValue ,
+		IID_PPV_ARGS( &m_depthStencilBuffer )
+	);
+	m_dsvHeap->SetName( L"Depth/Stencil Resource Heap" );
+	m_device->CreateDepthStencilView( m_depthStencilBuffer , &depthStencilDesc , m_dsvHeap->GetCPUDescriptorHandleForHeapStart() );
 
 	return resourceInit;
 }
@@ -335,6 +376,67 @@ void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
+void RenderContextDX12::CreateVertexBufferForVertexArray( uint numVerts , Vertex_PCU* verts )
+{
+	CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_DEFAULT );
+	CD3DX12_RESOURCE_DESC bufferResourceDesc = CD3DX12_RESOURCE_DESC::Buffer( numVerts * sizeof( Vertex_PCU ) );
+	m_device->CreateCommittedResource(
+		&heapProp , // a default heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc , // resource description for a buffer
+		D3D12_RESOURCE_STATE_COPY_DEST , // we will start this heap in the copy destination state since we will copy data
+										// from the upload heap to this heap
+		nullptr , // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
+		IID_PPV_ARGS( &m_vertexBuffer ) );
+
+	// we can give resource heaps a name so when we debug with the graphics debugger we know what resource we are looking at
+	m_vertexBuffer->SetName( L"Vertex Buffer Resource Heap" );
+
+	// create upload heap
+	// upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
+	// We will upload the vertex buffer using this heap to the default heap
+	CD3DX12_HEAP_PROPERTIES uploadHeapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
+
+	m_device->CreateCommittedResource(
+		&uploadHeapProp , // upload heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc , // resource description for a buffer
+		D3D12_RESOURCE_STATE_GENERIC_READ , // GPU will read from this buffer and copy its contents to the default heap
+		nullptr ,
+		IID_PPV_ARGS( &m_vertexBufferUploadHeap ) );
+	m_vertexBufferUploadHeap->SetName( L"Vertex Buffer Upload Resource Heap" );
+
+	// store vertex buffer in upload heap
+	D3D12_SUBRESOURCE_DATA vertexData = {};
+	vertexData.pData = reinterpret_cast< BYTE* >( &verts[ 0 ] ); // pointer to our vertex array
+	vertexData.RowPitch = numVerts * sizeof( Vertex_PCU ); // size of all our triangle vertex data
+	vertexData.SlicePitch = numVerts * sizeof( Vertex_PCU ); // also the size of our triangle vertex data
+
+	// we are now creating a command with the command list to copy the data from
+	// the upload heap to the default heap
+	UpdateSubresources( m_commandList->m_commandList , m_vertexBuffer , m_vertexBufferUploadHeap , 0 , 0 , 1 , &vertexData );
+
+	// transition the vertex buffer data from copy destination state to vertex buffer state
+	CD3DX12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( m_vertexBuffer , D3D12_RESOURCE_STATE_COPY_DEST , D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER );
+	m_commandList->m_commandList->ResourceBarrier( 1 , &resourceBarrier );
+
+	// Now we execute the command list to upload the initial assets (triangle data)
+//	m_commandList->m_commandList->Close();
+//	ID3D12CommandList* ppCommandLists[] = { m_commandList->m_commandList };
+//	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( ppCommandLists ) , ppCommandLists );
+//	
+//	// increment the fence value now, otherwise the buffer might not be uploaded by the time we start drawing
+//	m_fenceValue++;
+//	m_commandQueue->SignalFence( m_fenceValue );
+
+	// create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
+	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+	m_vertexBufferView.SizeInBytes = numVerts * sizeof( Vertex_PCU );
+	m_vertexBufferView.StrideInBytes = sizeof( Vertex_PCU );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
 void RenderContextDX12::CreateIndexBufferForIndexArray( std::vector<uint>& indices )
 {
 //	DX_SAFE_RELEASE( m_indexBuffer );
@@ -374,6 +476,63 @@ void RenderContextDX12::CreateIndexBufferForIndexArray( std::vector<uint>& indic
 	// store vertex buffer in upload heap
 	D3D12_SUBRESOURCE_DATA indexData = {};
 	indexData.pData = reinterpret_cast< BYTE* >( &indices[0] ); // pointer to our index array
+	indexData.RowPitch = iBufferSize; // size of all our index buffer
+	indexData.SlicePitch = iBufferSize; // also the size of our index buffer
+
+	// we are now creating a command with the command list to copy the data from
+	// the upload heap to the default heap
+	UpdateSubresources( m_commandList->m_commandList , m_indexBuffer , m_indexBufferUploadHeap , 0 , 0 , 1 , &indexData );
+
+	// transition the vertex buffer data from copy destination state to vertex buffer state
+	CD3DX12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( m_indexBuffer , D3D12_RESOURCE_STATE_COPY_DEST , D3D12_RESOURCE_STATE_INDEX_BUFFER );
+	m_commandList->m_commandList->ResourceBarrier( 1 , &resourceBarrier );
+
+	// create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
+	m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
+	m_indexBufferView.Format = DXGI_FORMAT_R32_UINT; // 32-bit unsigned integer (this is what a dword is, double word, a word is 2 bytes)
+	m_indexBufferView.SizeInBytes = iBufferSize;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateIndexBufferForIndexArray( uint numIndices , uint* indices )
+{
+	if ( numIndices < 6 )
+	{
+		return;
+	}
+	// Create index buffer
+
+	int iBufferSize = numIndices * sizeof( uint );
+	CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_DEFAULT );
+	CD3DX12_RESOURCE_DESC bufferResourceDesc = CD3DX12_RESOURCE_DESC::Buffer( iBufferSize );
+	// create default heap to hold index buffer
+	m_device->CreateCommittedResource(
+		&heapProp , // a default heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc , // resource description for a buffer
+		D3D12_RESOURCE_STATE_COPY_DEST , // start in the copy destination state
+		nullptr , // optimized clear value must be null for this type of resource
+		IID_PPV_ARGS( &m_indexBuffer ) );
+
+	// we can give resource heaps a name so when we debug with the graphics debugger we know what resource we are looking at
+	m_indexBuffer->SetName( L"Index Buffer Resource Heap" );
+
+	// create upload heap to upload index buffer
+	CD3DX12_HEAP_PROPERTIES uploadHeapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
+
+	m_device->CreateCommittedResource(
+		&uploadHeapProp , // upload heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc , // resource description for a buffer
+		D3D12_RESOURCE_STATE_GENERIC_READ , // GPU will read from this buffer and copy its contents to the default heap
+		nullptr ,
+		IID_PPV_ARGS( &m_indexBufferUploadHeap ) );
+	m_indexBufferUploadHeap->SetName( L"Index Buffer Upload Resource Heap" );
+
+	// store vertex buffer in upload heap
+	D3D12_SUBRESOURCE_DATA indexData = {};
+	indexData.pData = reinterpret_cast< BYTE* >( &indices[ 0 ] ); // pointer to our index array
 	indexData.RowPitch = iBufferSize; // size of all our index buffer
 	indexData.SlicePitch = iBufferSize; // also the size of our index buffer
 
@@ -654,6 +813,7 @@ void RenderContextDX12::UpdateBufferResource( CommandListDX12* commandList , ID3
 
 void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 {
+
 	auto commandAllocator = m_commandAllocators[ m_currentBackBufferIndex ];
 	
 	ID3D12Resource* backBuffer = nullptr;
@@ -701,8 +861,13 @@ void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 
 	rtv.ptr += ( ( UINT ) m_RTVDescriptorSize * ( UINT ) m_currentBackBufferIndex );
 	
+	// get a handle to the depth/stencil buffer
+	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle( m_dsvHeap->GetCPUDescriptorHandleForHeapStart() );
+
+	// set the render target for the output merger stage (the output of the pipeline)
 	m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
-	m_commandList->m_commandList->OMSetRenderTargets( 1 , &rtv , FALSE , nullptr );
+	m_commandList->m_commandList->ClearDepthStencilView( m_dsvHeap->GetCPUDescriptorHandleForHeapStart() , D3D12_CLEAR_FLAG_DEPTH , 1.0f , 0 , 0 , nullptr );
+	m_commandList->m_commandList->OMSetRenderTargets( 1 , &rtv , FALSE , &dsvHandle );
 	m_commandList->m_commandList->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 }
 
@@ -908,6 +1073,15 @@ void RenderContextDX12::DrawIndexedVertexArray( std::vector<Vertex_PCU>& verts ,
 	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_vertexBufferView ); // set the vertex buffer (using the vertex buffer view)
 	m_commandList->m_commandList->IASetIndexBuffer( &m_indexBufferView ); // set the vertex buffer (using the vertex buffer view)
 	m_commandList->m_commandList->DrawIndexedInstanced( indices.size() , verts.size() , 0 , 0 , 0 ); // finally draw 3 vertices (draw the triangle)
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::DrawIndexedVertexArray( uint numVerts , uint numIndices )
+{
+	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_vertexBufferView ); // set the vertex buffer (using the vertex buffer view)
+	m_commandList->m_commandList->IASetIndexBuffer( &m_indexBufferView ); // set the vertex buffer (using the vertex buffer view)
+	m_commandList->m_commandList->DrawIndexedInstanced( numIndices , numVerts , 0 , 0 , 0 ); // finally draw 3 vertices (draw the triangle)
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

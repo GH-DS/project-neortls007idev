@@ -76,10 +76,13 @@ public:
 	void					CreateRootSignature();
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	void					CreateVertexBufferForVertexArray( std::vector<Vertex_PCU>& verts );
+	void					CreateVertexBufferForVertexArray( uint numVerts , Vertex_PCU* verts );
 	void					CreateIndexBufferForIndexArray( std::vector<uint>& indices );
+	void					CreateIndexBufferForIndexArray( uint numIndices , uint* indices );
 	void					TestDraw();
 	void					DrawVertexArray( std::vector<Vertex_PCU>& verts );
 	void					DrawIndexedVertexArray( std::vector<Vertex_PCU>& verts , std::vector<uint>& indices );
+	void					DrawIndexedVertexArray( uint numVerts , uint numIndices );
 public:
 
 	Window*										m_window												= nullptr;
@@ -133,10 +136,13 @@ public:
 	
 	// Rasterizer State
 	D3D12_RASTERIZER_DESC						m_rasterizerStateDesc{};
+
+	// Depth Stencil State
+	D3D12_DEPTH_STENCIL_DESC					m_depthStencilDesc{};
 	// Depth buffer.
-	ID3D12Resource*								m_DepthBuffer											= nullptr;
+	ID3D12Resource*								m_depthStencilBuffer									= nullptr;
 	// Descriptor heap for depth buffer.
-	ID3D12DescriptorHeap*						m_DSVHeap												= nullptr;
+	ID3D12DescriptorHeap*						m_dsvHeap												= nullptr;
 
 private:
 	
