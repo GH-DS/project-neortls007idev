@@ -1,6 +1,7 @@
 #pragma once
-#include "Engine/Math/Vec3.hpp"
 #include "Engine/Math/Transform.hpp"
+#include "Engine/Math/Vec3.hpp"
+#include "Engine/Renderer/Camera.hpp"
 #include "Game/GameCommon.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -20,6 +21,9 @@ public:
 public:
 	Rgba8 m_clearScreenColor	= RED;
 	float m_colorLerpTimer		= 0.f;
+	mutable Camera				m_gameCamera;
+	std::vector<Vertex_PCU>		m_cubeMeshVerts;
+	std::vector<uint>			m_cubeMeshIndices;
 
 private:
 	//mutable Camera				m_gameCamera;

@@ -1,5 +1,5 @@
 
-#include "ShaderMathUtils.hlsl"
+//#include "ShaderMathUtils.hlsl"
 //--------------------------------------------------------------------------------------
 // Stream Input
 // ------
@@ -49,8 +49,8 @@ cbuffer model_constants : register( b2 ) // index 2 is now model
 }
 // Texture & Samplers are also a form of constants
 
-Texture2D <float4> tDiffuse : register( t0 );			// Color of surface
-SamplerState eSampler : register( s0 );					// Sampler are rules on hoe to sample
+// Texture2D <float4> tDiffuse : register( t0 );			// Color of surface
+// SamplerState eSampler : register( s0 );					// Sampler are rules on hoe to sample
 
 //--------------------------------------------------------------------------------------
 // Programmable Shader Stages
@@ -98,6 +98,6 @@ float4 FragmentFunction( v2f_t input ) : SV_Target0
 	// Very common rendering debugging method is to
 	// use color to portray information;
     //return float4(input.uv, 0, 1);
-	float4 color = tDiffuse.Sample( eSampler, input.uv );
-	return color * input.color * TINT;
+	// float4 color = tDiffuse.Sample( eSampler, input.uv );
+	return input.color * TINT;
 }

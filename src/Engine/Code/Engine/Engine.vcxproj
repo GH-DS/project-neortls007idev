@@ -890,6 +890,17 @@
     <ClCompile Include="Time\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12compatibility.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12sdklayers.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12shader.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12video.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3dcommon.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3dx12.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxcore.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxcore_interface.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxgicommon.h" />
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxgiformat.h" />
     <ClInclude Include="..\ThirdParty\fmod\fmod.h" />
     <ClInclude Include="..\ThirdParty\fmod\fmod.hpp" />
     <ClInclude Include="..\ThirdParty\fmod\fmod_codec.h" />

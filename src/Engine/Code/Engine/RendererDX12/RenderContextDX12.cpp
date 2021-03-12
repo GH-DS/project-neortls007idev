@@ -36,7 +36,7 @@
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 //#include <D3Dcommon.h>
-#include <d3d12.h>
+#include "Thirdparty/Dx12Helper/d3d12.h"
 #include <d3d12sdklayers.h>
 #include <d3dcompiler.h>
 #include <dxgi1_4.h>
@@ -56,11 +56,14 @@
 #pragma comment( lib, "D3D12.lib" )       
 #pragma comment( lib, "dxgi.lib" )        
 #pragma comment( lib, "d3dcompiler.lib" ) 
+#include "ThirdParty/Dx12Helper/d3dx12.h"
+#include <DirectXMath.h>
+#include "../Renderer/RenderContext.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		
 		RenderContextDX12*		g_theRenderer	= nullptr;
-
+		
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //				PROFILING D3D POINTER FOR THE SPECIFIC CONFIGURATIONS
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -139,8 +142,8 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	
 	CreateRootSignature();
 
-	m_defaultShader = new ShaderDX12( this , "Data/Shaders/triangle.hlsl" );
-	m_defaultShader->CreateFromFile( this , "Data/Shaders/triangle.hlsl" );
+	m_defaultShader = new ShaderDX12( this , "Data/Shaders/default.hlsl" );
+	m_defaultShader->CreateFromFile( this , "Data/Shaders/default.hlsl" );
 
 	m_currentShader = m_defaultShader;
 
@@ -176,9 +179,15 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	m_pipelineStateDesc.pRootSignature = m_rootSignature;
 
 
-	D3D12_INPUT_LAYOUT_DESC inputlayoutDesc{};
-	inputlayoutDesc.NumElements = 1;
-	m_pipelineStateDesc.InputLayout = { nullptr ,0 };
+	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
+	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+	};
+
+	D3D12_INPUT_LAYOUT_DESC inputlayoutDesc{ inputLayout , 3 };
+
+	m_pipelineStateDesc.InputLayout = inputlayoutDesc;
 	m_pipelineStateDesc.pRootSignature = m_rootSignature;
 	m_pipelineStateDesc.VS = m_currentShader->m_vertexStage.GetAsD3D12ByteCode();
 	m_pipelineStateDesc.PS = m_currentShader->m_fragmentStage.GetAsD3D12ByteCode();
@@ -195,6 +204,18 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	
 	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , m_pipelineState , D3D12_COMMAND_LIST_TYPE_DIRECT );
 	CreateFenceEventHandle();
+
+	//
+	//
+	//// subresource upadte
+	//D3D12_SUBRESOURCE_DATA subresourceData = {};
+	//subresourceData.pData = bufferData;
+	//subresourceData.RowPitch = bufferSize;
+	//subresourceData.SlicePitch = subresourceData.RowPitch;
+	//
+	//UpdateSubresources( commandList.Get() ,
+	//	*pDestinationResource , *pIntermediateResource ,
+	//	0 , 0 , 1 , &subresourceData );
 
 	return resourceInit;
 }
@@ -457,9 +478,60 @@ void RenderContextDX12::ClearDepth( CommandListDX12* commandList , D3D12_CPU_DES
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void RenderContextDX12::UpdateBufferResource( CommandListDX12* commandList , ID3D12Resource** pDestinationResource , ID3D12Resource** pIntermediateResource , size_t numElements , size_t elementSize , const void* bufferData , D3D12_RESOURCE_FLAGS flags /*= D3D12_RESOURCE_FLAG_NONE */ )
+void RenderContextDX12::UpdateBufferResource( CommandListDX12* commandList , ID3D12Resource** pDestinationResource , ID3D12Resource** pIntermediateResource ,
+												size_t numElements , size_t elementSize , const void* bufferData , D3D12_RESOURCE_FLAGS flags /*= D3D12_RESOURCE_FLAG_NONE */ )
 {
+	auto device = m_device;
 
+	size_t bufferSize = numElements * elementSize;
+
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE;
+	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	heapProperties.CreationNodeMask = 0;
+	heapProperties.VisibleNodeMask = 0;
+	
+	D3D12_RESOURCE_DESC heapDesc{};
+	heapDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	heapDesc.Flags = flags;
+	heapDesc.DepthOrArraySize = bufferSize;
+	// Create a committed resource for the GPU resource in a default heap.
+		m_device->CreateCommittedResource( &heapProperties , D3D12_HEAP_FLAG_NONE ,
+			&heapDesc ,
+			D3D12_RESOURCE_STATE_COPY_DEST ,
+			nullptr ,
+			IID_PPV_ARGS( pDestinationResource ) );
+	
+	// Create an committed resource for the upload.
+	D3D12_HEAP_PROPERTIES uploadHeap{};
+	uploadHeap.Type = D3D12_HEAP_TYPE_UPLOAD;
+	uploadHeap.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE;
+	uploadHeap.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	uploadHeap.CreationNodeMask = 0;
+	uploadHeap.VisibleNodeMask = 0;
+
+	D3D12_RESOURCE_DESC uploadHeapDesc{};
+	uploadHeapDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	uploadHeapDesc.DepthOrArraySize = bufferSize;
+
+	if ( bufferData )
+	{
+		m_device->CreateCommittedResource( &uploadHeap , D3D12_HEAP_FLAG_NONE ,
+			&uploadHeapDesc ,
+			D3D12_RESOURCE_STATE_GENERIC_READ ,
+			nullptr ,
+			IID_PPV_ARGS( pIntermediateResource ) );
+
+		D3D12_SUBRESOURCE_DATA subresourceData = {};
+		subresourceData.pData = bufferData;
+		subresourceData.RowPitch = bufferSize;
+		subresourceData.SlicePitch = subresourceData.RowPitch;
+		
+		UpdateSubresources( m_commandList->m_commandList ,
+			*pDestinationResource , *pIntermediateResource ,
+			0 , 0 , 1 , &subresourceData );
+	}
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -654,20 +726,31 @@ void RenderContextDX12::CreateRootSignature()
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
 		D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
-		D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
+		D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
 
 	// A single 32-bit constant root parameter that is used by the vertex shader.
 
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDescription{};
 	
-	D3D12_ROOT_PARAMETER rootParameters[ 1 ] = {};
+	D3D12_ROOT_PARAMETER rootParameters[ 3 ] = {};
 	
-	rootParameters[ 0 ].Constants.Num32BitValues = sizeof( Mat44 ) / sizeof( float );
-	rootParameters[ 0 ].Constants.RegisterSpace = 0;
+	rootParameters[ 0 ].Constants.Num32BitValues = sizeof( FrameDataT ) / sizeof( float );
 	rootParameters[ 0 ].Constants.ShaderRegister = 0;
-	rootParameters[ 0 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+	rootParameters[ 0 ].Constants.RegisterSpace = 0;
+	rootParameters[ 0 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 	rootParameters[ 0 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+
+	rootParameters[ 1 ].Constants.Num32BitValues = sizeof( CameraDataT ) / sizeof( float );
+	rootParameters[ 1 ].Constants.ShaderRegister = 1;
+	rootParameters[ 1 ].Constants.RegisterSpace = 0;
+	rootParameters[ 1 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParameters[ 1 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+
+	rootParameters[ 2 ].Constants.Num32BitValues = sizeof( ModelDataT ) / sizeof( float );
+	rootParameters[ 2 ].Constants.ShaderRegister = 2;
+	rootParameters[ 2 ].Constants.RegisterSpace = 0;
+	rootParameters[ 2 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	rootParameters[ 2 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 
 	rootSignatureDescription.NumParameters		=  _countof( rootParameters );
 	rootSignatureDescription.pParameters		= rootParameters;

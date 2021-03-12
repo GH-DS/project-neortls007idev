@@ -5,6 +5,8 @@
 #include "Game/GameCommon.hpp"
 #include "Game/TheApp.hpp"
 #include "Engine/Math/MathUtils.hpp"
+#include "Engine/Primitives/AABB3.hpp"
+#include "Engine/Core/VertexUtils.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -20,6 +22,9 @@ Game::Game()
 	g_theInput->PushCursorSettings( CursorSettings( ABSOLUTE_MODE , MOUSE_IS_UNLOCKED , true ) );
 	m_clearScreenColor = RED;
 	m_colorLerpTimer = 0.f;
+
+	AABB3 box( Vec3( -0.5f , -0.5f , -0.5f ) , Vec3( 0.5f , 0.5f , 0.5f ) );
+	CreateCuboid( m_cubeMeshVerts , m_cubeMeshIndices , box , WHITE );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -33,9 +38,9 @@ Game::~Game()
 
 void Game::InitializeCameras()
 {
-	//m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
-	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 0.f ) );
-	//m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
+	m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
+	m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 0.f ) );
+	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
