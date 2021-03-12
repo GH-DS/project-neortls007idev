@@ -92,6 +92,32 @@ void Game::Render() const
 	AppendVertsForAABB2( testAABB , box , WHITE );
 	g_theRenderer->CreateVertexBufferForVertexArray( testAABB );
 	g_theRenderer->DrawVertexArray( testAABB );
+
+	AABB2 box2( -100.5f , -100.5f , 100.5f , 100.5f );
+	std::vector<Vertex_PCU> testAABBindexedVerts;
+	std::vector<uint> testAABBindices;
+
+	const Vertex_PCU boxVerts[ 4 ] = {
+								Vertex_PCU( Vec3( box2.m_mins.x,box2.m_mins.y,0.f ) , RED , Vec2( 0.f, 0.f ) ),
+								Vertex_PCU( Vec3( box2.m_maxs.x,box2.m_mins.y,0.f ) , RED , Vec2( 1.f, 0.f ) ),
+								Vertex_PCU( Vec3( box2.m_mins.x,box2.m_maxs.y,0.f ) , RED , Vec2( 0.f, 1.f ) ),
+								Vertex_PCU( Vec3( box2.m_maxs.x,box2.m_maxs.y,0.f ) , RED , Vec2( 1.f, 1.f ) ) };
+
+	for ( int index = 0; index < 4; index++ )
+	{
+		testAABBindexedVerts.push_back( boxVerts[ index ] );
+	}
+	
+	testAABBindices.push_back( 0 );
+	testAABBindices.push_back( 1 );
+	testAABBindices.push_back( 2 );
+
+	testAABBindices.push_back( 1 );
+	testAABBindices.push_back( 3 );
+	testAABBindices.push_back( 2 );
+	g_theRenderer->CreateVertexBufferForVertexArray( testAABBindexedVerts );
+	g_theRenderer->CreateIndexBufferForIndexArray( testAABBindices );
+	g_theRenderer->DrawIndexedVertexArray( testAABBindexedVerts , testAABBindices );
 	//g_theRenderer->TestDraw();
 }
 

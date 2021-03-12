@@ -271,6 +271,7 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 
 void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU>& verts )
 {
+//	DX_SAFE_RELEASE( m_vertexBuffer );
 	// create default heap
 	// default heap is memory on the GPU. Only the GPU has access to this memory
 	// To get data into this heap, we will have to upload the data using
@@ -293,15 +294,15 @@ void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU
 	// upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
 	// We will upload the vertex buffer using this heap to the default heap
 	CD3DX12_HEAP_PROPERTIES uploadHeapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
-	ID3D12Resource* vBufferUploadHeap;
+
 	m_device->CreateCommittedResource(
 		&uploadHeapProp , // upload heap
 		D3D12_HEAP_FLAG_NONE , // no flags
 		&bufferResourceDesc , // resource description for a buffer
 		D3D12_RESOURCE_STATE_GENERIC_READ , // GPU will read from this buffer and copy its contents to the default heap
 		nullptr ,
-		IID_PPV_ARGS( &vBufferUploadHeap ) );
-	vBufferUploadHeap->SetName( L"Vertex Buffer Upload Resource Heap" );
+		IID_PPV_ARGS( &m_vertexBufferUploadHeap ) );
+	m_vertexBufferUploadHeap->SetName( L"Vertex Buffer Upload Resource Heap" );
 
 	// store vertex buffer in upload heap
 	D3D12_SUBRESOURCE_DATA vertexData = {};
@@ -311,7 +312,7 @@ void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU
 
 	// we are now creating a command with the command list to copy the data from
 	// the upload heap to the default heap
-	UpdateSubresources( m_commandList->m_commandList , m_vertexBuffer , vBufferUploadHeap , 0 , 0 , 1 , &vertexData );
+	UpdateSubresources( m_commandList->m_commandList , m_vertexBuffer , m_vertexBufferUploadHeap , 0 , 0 , 1 , &vertexData );
 
 	// transition the vertex buffer data from copy destination state to vertex buffer state
 	CD3DX12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( m_vertexBuffer , D3D12_RESOURCE_STATE_COPY_DEST , D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER );
@@ -327,9 +328,67 @@ void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU
 //	m_commandQueue->SignalFence( m_fenceValue );
 	
 	// create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
-	m_VertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
-	m_VertexBufferView.SizeInBytes = verts.size() * sizeof( Vertex_PCU );
-	m_VertexBufferView.StrideInBytes = sizeof( Vertex_PCU );
+	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+	m_vertexBufferView.SizeInBytes = verts.size() * sizeof( Vertex_PCU );
+	m_vertexBufferView.StrideInBytes = sizeof( Vertex_PCU );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateIndexBufferForIndexArray( std::vector<uint>& indices )
+{
+//	DX_SAFE_RELEASE( m_indexBuffer );
+	if( indices.size() < 6 )
+	{
+		return;
+	}
+	// Create index buffer
+
+	int iBufferSize = indices.size() * sizeof( uint );
+	CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_DEFAULT );
+	CD3DX12_RESOURCE_DESC bufferResourceDesc = CD3DX12_RESOURCE_DESC::Buffer( iBufferSize );
+	// create default heap to hold index buffer
+	m_device->CreateCommittedResource(
+		&heapProp , // a default heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc , // resource description for a buffer
+		D3D12_RESOURCE_STATE_COPY_DEST , // start in the copy destination state
+		nullptr , // optimized clear value must be null for this type of resource
+		IID_PPV_ARGS( &m_indexBuffer ) );
+
+	// we can give resource heaps a name so when we debug with the graphics debugger we know what resource we are looking at
+	m_indexBuffer->SetName( L"Index Buffer Resource Heap" );
+
+	// create upload heap to upload index buffer
+	CD3DX12_HEAP_PROPERTIES uploadHeapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
+	
+	m_device->CreateCommittedResource(
+		&uploadHeapProp , // upload heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc , // resource description for a buffer
+		D3D12_RESOURCE_STATE_GENERIC_READ , // GPU will read from this buffer and copy its contents to the default heap
+		nullptr ,
+		IID_PPV_ARGS( &m_indexBufferUploadHeap ) );
+	m_indexBufferUploadHeap->SetName( L"Index Buffer Upload Resource Heap" );
+
+	// store vertex buffer in upload heap
+	D3D12_SUBRESOURCE_DATA indexData = {};
+	indexData.pData = reinterpret_cast< BYTE* >( &indices[0] ); // pointer to our index array
+	indexData.RowPitch = iBufferSize; // size of all our index buffer
+	indexData.SlicePitch = iBufferSize; // also the size of our index buffer
+
+	// we are now creating a command with the command list to copy the data from
+	// the upload heap to the default heap
+	UpdateSubresources( m_commandList->m_commandList , m_indexBuffer , m_indexBufferUploadHeap , 0 , 0 , 1 , &indexData );
+
+	// transition the vertex buffer data from copy destination state to vertex buffer state
+	CD3DX12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( m_indexBuffer , D3D12_RESOURCE_STATE_COPY_DEST , D3D12_RESOURCE_STATE_INDEX_BUFFER );
+	m_commandList->m_commandList->ResourceBarrier( 1 , &resourceBarrier );
+
+	// create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
+	m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
+	m_indexBufferView.Format = DXGI_FORMAT_R32_UINT; // 32-bit unsigned integer (this is what a dword is, double word, a word is 2 bytes)
+	m_indexBufferView.SizeInBytes = iBufferSize;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -412,6 +471,8 @@ void RenderContextDX12::EndFrame()
 {
 	Present();
 	Flush( m_fenceValue );
+//	DX_SAFE_RELEASE( m_vertexBufferUploadHeap );
+//	DX_SAFE_RELEASE( m_indexBufferUploadHeap );
 	//m_swapChain->Present();
 }
 
@@ -836,8 +897,17 @@ void RenderContextDX12::TestDraw()
 
 void RenderContextDX12::DrawVertexArray( std::vector<Vertex_PCU>& verts )
 {
-	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_VertexBufferView ); // set the vertex buffer (using the vertex buffer view)
+	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_vertexBufferView ); // set the vertex buffer (using the vertex buffer view)
 	m_commandList->m_commandList->DrawInstanced( verts.size() , 1 , 0 , 0 ); // finally draw 3 vertices (draw the triangle)
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::DrawIndexedVertexArray( std::vector<Vertex_PCU>& verts , std::vector<uint>& indices )
+{
+	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_vertexBufferView ); // set the vertex buffer (using the vertex buffer view)
+	m_commandList->m_commandList->IASetIndexBuffer( &m_indexBufferView ); // set the vertex buffer (using the vertex buffer view)
+	m_commandList->m_commandList->DrawIndexedInstanced( indices.size() , verts.size() , 0 , 0 , 0 ); // finally draw 3 vertices (draw the triangle)
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

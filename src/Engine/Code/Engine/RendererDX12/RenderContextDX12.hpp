@@ -76,8 +76,10 @@ public:
 	void					CreateRootSignature();
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	void					CreateVertexBufferForVertexArray( std::vector<Vertex_PCU>& verts );
+	void					CreateIndexBufferForIndexArray( std::vector<uint>& indices );
 	void					TestDraw();
 	void					DrawVertexArray( std::vector<Vertex_PCU>& verts );
+	void					DrawIndexedVertexArray( std::vector<Vertex_PCU>& verts , std::vector<uint>& indices );
 public:
 
 	Window*										m_window												= nullptr;
@@ -121,11 +123,13 @@ public:
 	D3D12_RECT									m_scisrroRec;
 
 	// Vertex buffer for the cube.
-	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView = {};
+	D3D12_VERTEX_BUFFER_VIEW					m_vertexBufferView										= {};
 	ID3D12Resource*								m_vertexBuffer											= nullptr;
+	ID3D12Resource*								m_vertexBufferUploadHeap								= nullptr;
 	// Index buffer for the cube.
-	D3D12_INDEX_BUFFER_VIEW m_IndexBufferView = {};
+	D3D12_INDEX_BUFFER_VIEW						m_indexBufferView										= {};
 	ID3D12Resource*								m_indexBuffer											= nullptr;
+	ID3D12Resource*								m_indexBufferUploadHeap									= nullptr;
 	
 	// Rasterizer State
 	D3D12_RASTERIZER_DESC						m_rasterizerStateDesc{};
