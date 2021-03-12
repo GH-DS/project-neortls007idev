@@ -75,7 +75,9 @@ public:
 	void					CreateRenderTargetViews();
 	void					CreateRootSignature();
 //--------------------------------------------------------------------------------------------------------------------------------------------
+	void					CreateVertexBufferForVertexArray( std::vector<Vertex_PCU>& verts );
 	void					TestDraw();
+	void					DrawVertexArray( std::vector<Vertex_PCU>& verts );
 public:
 
 	Window*										m_window												= nullptr;
@@ -124,11 +126,14 @@ public:
 	// Index buffer for the cube.
 	D3D12_INDEX_BUFFER_VIEW m_IndexBufferView = {};
 	ID3D12Resource*								m_indexBuffer											= nullptr;
-
+	
+	// Rasterizer State
+	D3D12_RASTERIZER_DESC						m_rasterizerStateDesc{};
 	// Depth buffer.
 	ID3D12Resource*								m_DepthBuffer											= nullptr;
 	// Descriptor heap for depth buffer.
 	ID3D12DescriptorHeap*						m_DSVHeap												= nullptr;
+
 private:
 	
 };

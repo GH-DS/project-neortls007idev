@@ -164,18 +164,18 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	blendDesc.RenderTarget[ 0 ].LogicOp = D3D12_LOGIC_OP_NOOP;
 	blendDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	D3D12_RASTERIZER_DESC rasterDesc{};
-	rasterDesc.FillMode = D3D12_FILL_MODE_SOLID;
-	rasterDesc.CullMode = D3D12_CULL_MODE_BACK;
-	rasterDesc.FrontCounterClockwise = FALSE;
-	rasterDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-	rasterDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
-	rasterDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
-	rasterDesc.DepthClipEnable = TRUE;
-	rasterDesc.MultisampleEnable = FALSE;
-	rasterDesc.AntialiasedLineEnable = FALSE;
-	rasterDesc.ForcedSampleCount = 0;
-	rasterDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	ZeroMemory( &m_rasterizerStateDesc , sizeof( D3D11_RASTERIZER_DESC ) );
+	m_rasterizerStateDesc.FillMode = D3D12_FILL_MODE_SOLID;
+	m_rasterizerStateDesc.CullMode = D3D12_CULL_MODE_BACK;
+	m_rasterizerStateDesc.FrontCounterClockwise = TRUE;
+	m_rasterizerStateDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+	m_rasterizerStateDesc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+	m_rasterizerStateDesc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	m_rasterizerStateDesc.DepthClipEnable = TRUE;
+	m_rasterizerStateDesc.MultisampleEnable = FALSE;
+	m_rasterizerStateDesc.AntialiasedLineEnable = FALSE;
+	m_rasterizerStateDesc.ForcedSampleCount = 0;
+	m_rasterizerStateDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 	m_pipelineStateDesc.pRootSignature = m_rootSignature;
 
 
@@ -191,7 +191,7 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	m_pipelineStateDesc.pRootSignature = m_rootSignature;
 	m_pipelineStateDesc.VS = m_currentShader->m_vertexStage.GetAsD3D12ByteCode();
 	m_pipelineStateDesc.PS = m_currentShader->m_fragmentStage.GetAsD3D12ByteCode();
-	m_pipelineStateDesc.RasterizerState = rasterDesc;
+	m_pipelineStateDesc.RasterizerState = m_rasterizerStateDesc;
 	m_pipelineStateDesc.BlendState = blendDesc;
 	m_pipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
 	m_pipelineStateDesc.DepthStencilState.StencilEnable = FALSE;
@@ -204,18 +204,7 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	
 	m_commandList = new CommandListDX12( this , m_commandAllocators[ 0 ] , m_pipelineState , D3D12_COMMAND_LIST_TYPE_DIRECT );
 	CreateFenceEventHandle();
-
-	//
-	//
-	//// subresource upadte
-	//D3D12_SUBRESOURCE_DATA subresourceData = {};
-	//subresourceData.pData = bufferData;
-	//subresourceData.RowPitch = bufferSize;
-	//subresourceData.SlicePitch = subresourceData.RowPitch;
-	//
-	//UpdateSubresources( commandList.Get() ,
-	//	*pDestinationResource , *pIntermediateResource ,
-	//	0 , 0 , 1 , &subresourceData );
+	//CreateVertexBufferForVertexArray();
 
 	return resourceInit;
 }
@@ -276,6 +265,71 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 	
 	DX_SAFE_RELEASE( dxgiFactory );
 	return result;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU>& verts )
+{
+	// create default heap
+	// default heap is memory on the GPU. Only the GPU has access to this memory
+	// To get data into this heap, we will have to upload the data using
+	// an upload heap
+	CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_DEFAULT );
+	CD3DX12_RESOURCE_DESC bufferResourceDesc = CD3DX12_RESOURCE_DESC::Buffer( verts.size() * sizeof( Vertex_PCU ) );
+	m_device->CreateCommittedResource(
+		&heapProp , // a default heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc  , // resource description for a buffer
+		D3D12_RESOURCE_STATE_COPY_DEST , // we will start this heap in the copy destination state since we will copy data
+										// from the upload heap to this heap
+		nullptr , // optimized clear value must be null for this type of resource. used for render targets and depth/stencil buffers
+		IID_PPV_ARGS( &m_vertexBuffer ) );
+
+	// we can give resource heaps a name so when we debug with the graphics debugger we know what resource we are looking at
+	m_vertexBuffer->SetName( L"Vertex Buffer Resource Heap" );
+
+	// create upload heap
+	// upload heaps are used to upload data to the GPU. CPU can write to it, GPU can read from it
+	// We will upload the vertex buffer using this heap to the default heap
+	CD3DX12_HEAP_PROPERTIES uploadHeapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
+	ID3D12Resource* vBufferUploadHeap;
+	m_device->CreateCommittedResource(
+		&uploadHeapProp , // upload heap
+		D3D12_HEAP_FLAG_NONE , // no flags
+		&bufferResourceDesc , // resource description for a buffer
+		D3D12_RESOURCE_STATE_GENERIC_READ , // GPU will read from this buffer and copy its contents to the default heap
+		nullptr ,
+		IID_PPV_ARGS( &vBufferUploadHeap ) );
+	vBufferUploadHeap->SetName( L"Vertex Buffer Upload Resource Heap" );
+
+	// store vertex buffer in upload heap
+	D3D12_SUBRESOURCE_DATA vertexData = {};
+	vertexData.pData = reinterpret_cast< BYTE* >( &verts[0] ); // pointer to our vertex array
+	vertexData.RowPitch = verts.size() * sizeof( Vertex_PCU ); // size of all our triangle vertex data
+	vertexData.SlicePitch = verts.size() * sizeof( Vertex_PCU ); // also the size of our triangle vertex data
+
+	// we are now creating a command with the command list to copy the data from
+	// the upload heap to the default heap
+	UpdateSubresources( m_commandList->m_commandList , m_vertexBuffer , vBufferUploadHeap , 0 , 0 , 1 , &vertexData );
+
+	// transition the vertex buffer data from copy destination state to vertex buffer state
+	CD3DX12_RESOURCE_BARRIER resourceBarrier = CD3DX12_RESOURCE_BARRIER::Transition( m_vertexBuffer , D3D12_RESOURCE_STATE_COPY_DEST , D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER );
+	m_commandList->m_commandList->ResourceBarrier( 1 , &resourceBarrier );
+
+	// Now we execute the command list to upload the initial assets (triangle data)
+//	m_commandList->m_commandList->Close();
+//	ID3D12CommandList* ppCommandLists[] = { m_commandList->m_commandList };
+//	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( ppCommandLists ) , ppCommandLists );
+//	
+//	// increment the fence value now, otherwise the buffer might not be uploaded by the time we start drawing
+//	m_fenceValue++;
+//	m_commandQueue->SignalFence( m_fenceValue );
+	
+	// create a vertex buffer view for the triangle. We get the GPU memory address to the vertex pointer using the GetGPUVirtualAddress() method
+	m_VertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+	m_VertexBufferView.SizeInBytes = verts.size() * sizeof( Vertex_PCU );
+	m_VertexBufferView.StrideInBytes = sizeof( Vertex_PCU );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -738,19 +792,19 @@ void RenderContextDX12::CreateRootSignature()
 	rootParameters[ 0 ].Constants.ShaderRegister = 0;
 	rootParameters[ 0 ].Constants.RegisterSpace = 0;
 	rootParameters[ 0 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParameters[ 0 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[ 0 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 
 	rootParameters[ 1 ].Constants.Num32BitValues = sizeof( CameraDataT ) / sizeof( float );
 	rootParameters[ 1 ].Constants.ShaderRegister = 1;
 	rootParameters[ 1 ].Constants.RegisterSpace = 0;
 	rootParameters[ 1 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParameters[ 1 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[ 1 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 
 	rootParameters[ 2 ].Constants.Num32BitValues = sizeof( ModelDataT ) / sizeof( float );
 	rootParameters[ 2 ].Constants.ShaderRegister = 2;
 	rootParameters[ 2 ].Constants.RegisterSpace = 0;
 	rootParameters[ 2 ].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	rootParameters[ 2 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootParameters[ 2 ].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 
 	rootSignatureDescription.NumParameters		=  _countof( rootParameters );
 	rootSignatureDescription.pParameters		= rootParameters;
@@ -776,6 +830,14 @@ void RenderContextDX12::CreateRootSignature()
 void RenderContextDX12::TestDraw()
 {
 	m_commandList->m_commandList->DrawInstanced( 3 , 1 , 0 , 0 );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::DrawVertexArray( std::vector<Vertex_PCU>& verts )
+{
+	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_VertexBufferView ); // set the vertex buffer (using the vertex buffer view)
+	m_commandList->m_commandList->DrawInstanced( verts.size() , 1 , 0 , 0 ); // finally draw 3 vertices (draw the triangle)
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
