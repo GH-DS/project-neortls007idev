@@ -8,7 +8,7 @@
 #define DX_SAFE_RELEASED(ptr) if(nullptr != ptr) {ptr->Release(); ptr = nullptr;}
 
 #define INITGUID
-#include <d3d12.h>
+#include "Thirdparty/Dx12Helper/d3d12.h"
 #include <cguid.h>
 #include <dxgi.h>   // shared library `used across multiple dx graphical interfaces
 #include <dxgidebug.h>  // debug utility (mostly used for reporting and analytics)

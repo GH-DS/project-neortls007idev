@@ -1,5 +1,5 @@
 
-#include "ShaderMathUtils.hlsl"
+//#include "ShaderMathUtils.hlsl"
 //--------------------------------------------------------------------------------------
 // Stream Input
 // ------
@@ -49,8 +49,8 @@ cbuffer model_constants : register( b2 ) // index 2 is now model
 }
 // Texture & Samplers are also a form of constants
 
-Texture2D <float4> tDiffuse : register( t0 );			// Color of surface
-SamplerState eSampler : register( s0 );					// Sampler are rules on hoe to sample
+// Texture2D <float4> tDiffuse : register( t0 );			// Color of surface
+// SamplerState eSampler : register( s0 );					// Sampler are rules on hoe to sample
 
 //--------------------------------------------------------------------------------------
 // Programmable Shader Stages
@@ -83,6 +83,8 @@ v2f_t VertexFunction( vs_input_t input )
    float4 clipPos	= mul( CAMERA_TO_CLIP_TRANSFORM , cameraPos );
 
    v2f.position = clipPos;
+ //  v2f.position.y *= sin( SYSTEM_TIME_SECONDS );
+ //  v2f.position.x *= cos( SYSTEM_TIME_SECONDS );
    return v2f;
 }
 
@@ -93,11 +95,13 @@ v2f_t VertexFunction( vs_input_t input )
 // is being drawn to the first bound color target.
 float4 FragmentFunction( v2f_t input ) : SV_Target0
 {
+    float4 color = input.color;
+    //color.r = sin( SYSTEM_TIME_SECONDS );
 	// we'll outoupt our UV coordinates as color here
 	// to make sure they're being passed correctly.
 	// Very common rendering debugging method is to
 	// use color to portray information;
     //return float4(input.uv, 0, 1);
-	float4 color = tDiffuse.Sample( eSampler, input.uv );
-	return color * input.color * TINT;
+	// float4 color = tDiffuse.Sample( eSampler, input.uv );
+	return color * TINT;
 }

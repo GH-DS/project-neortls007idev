@@ -458,6 +458,305 @@ void GenerateTangentsForVertexArray( std::vector<VertexMaster>& vertices )
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
+void LoadObjFileIntoVertexBuffer( std::vector<VertexMaster>& vertexBuffer , std::vector<uint>& indices , MeshBuilderOptions options , std::string objFilePath )
+{
+	std::vector<std::string> linesOfObjFile;
+	ParseObjFile( objFilePath , linesOfObjFile );
+
+	std::vector<Vec3>					postions;
+	std::vector<Vec3>					normals;
+	std::vector<Vec2>					uvs;
+
+	std::vector<std::vector<int>>		iForVerts;
+	std::vector<std::vector<int>>		iForNormals;
+	std::vector<std::vector<int>>		iForTex;
+
+	uint currentVert = 0;
+	float boundingRadiusSquare = 0.f;
+
+	for ( size_t i = 0; i < linesOfObjFile.size(); i++ )
+	{
+		if ( linesOfObjFile[ i ] == "" )
+		{
+			continue;
+		}
+
+		Strings s = GetTrimmedStrings( linesOfObjFile[ i ] );
+
+		if ( s[ 0 ] == "#" )
+		{
+			continue;
+		}
+		if ( s[ 0 ] == "v" )
+		{
+			Vec3 vec;
+			vec.x = ( float ) atof( s[ 1 ].c_str() );
+			vec.y = ( float ) atof( s[ 2 ].c_str() );
+			vec.z = ( float ) atof( s[ 3 ].c_str() );
+			postions.push_back( vec );
+		}
+		if ( s[ 0 ] == "vn" )
+		{
+			Vec3 vec;
+			vec.x = ( float ) atof( s[ 1 ].c_str() );
+			vec.y = ( float ) atof( s[ 2 ].c_str() );
+			vec.z = ( float ) atof( s[ 3 ].c_str() );
+			normals.push_back( vec );
+		}
+		if ( s[ 0 ] == "vt" )
+		{
+			Vec2 vec;
+			vec.x = ( float ) atof( s[ 1 ].c_str() );
+			vec.y = ( float ) atof( s[ 2 ].c_str() );
+			uvs.push_back( vec );
+		}
+		if ( s[ 0 ] == "f" )
+		{
+			if ( s.size() == 5 )
+			{
+				Strings t1 = SplitStringAtGivenDelimiter( s[ 1 ] , '/' );
+				Strings t2 = SplitStringAtGivenDelimiter( s[ 2 ] , '/' );
+				Strings t3 = SplitStringAtGivenDelimiter( s[ 3 ] , '/' );
+				Strings t4 = SplitStringAtGivenDelimiter( s[ 4 ] , '/' );
+				std::vector<int> x1;
+				std::vector<int> x2;
+				std::vector<int> x3;
+				x1.push_back( atoi( t1[ 0 ].c_str() ) );
+				x1.push_back( atoi( t2[ 0 ].c_str() ) );
+				x1.push_back( atoi( t3[ 0 ].c_str() ) );
+				x1.push_back( atoi( t4[ 0 ].c_str() ) );
+
+				x2.push_back( atoi( t1[ 1 ].c_str() ) );
+				x2.push_back( atoi( t2[ 1 ].c_str() ) );
+				x2.push_back( atoi( t3[ 1 ].c_str() ) );
+				x2.push_back( atoi( t4[ 1 ].c_str() ) );
+				x3.push_back( atoi( t1[ 2 ].c_str() ) );
+				x3.push_back( atoi( t2[ 2 ].c_str() ) );
+				x3.push_back( atoi( t3[ 2 ].c_str() ) );
+				x3.push_back( atoi( t4[ 2 ].c_str() ) );
+				iForVerts.push_back( x1 );
+				iForTex.push_back( x2 );
+				iForNormals.push_back( x3 );
+			}
+			else if ( s.size() == 4 )
+			{
+				Strings t1 = SplitStringAtGivenDelimiter( s[ 1 ] , '/' );
+				Strings t2 = SplitStringAtGivenDelimiter( s[ 2 ] , '/' );
+				Strings t3 = SplitStringAtGivenDelimiter( s[ 3 ] , '/' );
+				std::vector<int> x1;
+				std::vector<int> x2;
+				std::vector<int> x3;
+				x1.push_back( atoi( t1[ 0 ].c_str() ) );
+				x1.push_back( atoi( t2[ 0 ].c_str() ) );
+				x1.push_back( atoi( t3[ 0 ].c_str() ) );
+
+				x2.push_back( atoi( t1[ 1 ].c_str() ) );
+				x2.push_back( atoi( t2[ 1 ].c_str() ) );
+				x2.push_back( atoi( t3[ 1 ].c_str() ) );
+
+				x3.push_back( atoi( t1[ 2 ].c_str() ) );
+				x3.push_back( atoi( t2[ 2 ].c_str() ) );
+				x3.push_back( atoi( t3[ 2 ].c_str() ) );
+
+				iForVerts.push_back( x1 );
+				iForTex.push_back( x2 );
+				iForNormals.push_back( x3 );
+
+			}
+			else
+			{
+				DebuggerPrintf( "Error in obj definition" );
+				//DEBUGBREAK();
+			}
+		}
+	}
+
+	for ( size_t i = 0; i < iForVerts.size(); i++ )
+	{
+		if ( iForVerts[ i ].size() == 4 )
+		{
+			VertexMaster v1;
+			VertexMaster v2;
+			VertexMaster v3;
+			VertexMaster v4;
+
+			v1.m_normalizedColor = Rgba8( 255 , 255 , 255 , 255 ).GetAsNormalizedFloat4();
+			v2.m_normalizedColor = Rgba8( 255 , 255 , 255 , 255 ).GetAsNormalizedFloat4();
+			v3.m_normalizedColor = Rgba8( 255 , 255 , 255 , 255 ).GetAsNormalizedFloat4();
+			v4.m_normalizedColor = Rgba8( 255 , 255 , 255 , 255 ).GetAsNormalizedFloat4();
+
+			v1.m_position = postions[ ( iForVerts[ i ][ 0 ] ) - 1 ];
+			v2.m_position = postions[ ( iForVerts[ i ][ 1 ] ) - 1 ];
+			v3.m_position = postions[ ( iForVerts[ i ][ 2 ] ) - 1 ];
+			v4.m_position = postions[ ( iForVerts[ i ][ 3 ] ) - 1 ];
+
+			v1.m_position = options.transform.TransformPosition3D( v1.m_position );
+			v2.m_position = options.transform.TransformPosition3D( v2.m_position );
+			v3.m_position = options.transform.TransformPosition3D( v3.m_position );
+			v4.m_position = options.transform.TransformPosition3D( v4.m_position );
+
+			v1.m_normal = normals[ ( iForNormals[ i ][ 0 ] ) - 1 ];
+			v2.m_normal = normals[ ( iForNormals[ i ][ 1 ] ) - 1 ];
+			v3.m_normal = normals[ ( iForNormals[ i ][ 2 ] ) - 1 ];
+			v4.m_normal = normals[ ( iForNormals[ i ][ 3 ] ) - 1 ];
+
+			v1.m_uvTexCoords = uvs[ ( iForTex[ i ][ 0 ] ) - 1 ];
+			v2.m_uvTexCoords = uvs[ ( iForTex[ i ][ 1 ] ) - 1 ];
+			v3.m_uvTexCoords = uvs[ ( iForTex[ i ][ 2 ] ) - 1 ];
+			v4.m_uvTexCoords = uvs[ ( iForTex[ i ][ 3 ] ) - 1 ];
+
+			if ( iForNormals.size() > 0 )
+			{
+				v1.m_normal = normals[ ( iForNormals[ i ][ 0 ] ) - 1 ];
+				v2.m_normal = normals[ ( iForNormals[ i ][ 1 ] ) - 1 ];
+				v3.m_normal = normals[ ( iForNormals[ i ][ 2 ] ) - 1 ];
+				v4.m_normal = normals[ ( iForNormals[ i ][ 3 ] ) - 1 ];
+
+				v1.m_normal = options.transform.TransformPosition3D( v1.m_normal );
+				v2.m_normal = options.transform.TransformPosition3D( v2.m_normal );
+				v3.m_normal = options.transform.TransformPosition3D( v3.m_normal );
+				v4.m_normal = options.transform.TransformPosition3D( v4.m_normal );
+			}
+
+			if ( options.invertWindingOrder && !options.clean )
+			{
+				vertexBuffer.push_back( v1 );
+				vertexBuffer.push_back( v4 );
+				vertexBuffer.push_back( v3 );
+
+				vertexBuffer.push_back( v4 );
+				vertexBuffer.push_back( v2 );
+				vertexBuffer.push_back( v1 );
+
+				currentVert = ( uint ) vertexBuffer.size();
+			}
+			else if ( !options.invertWindingOrder && !options.clean )
+			{
+				vertexBuffer.push_back( v1 );
+				vertexBuffer.push_back( v2 );
+				vertexBuffer.push_back( v3 );
+
+				vertexBuffer.push_back( v3 );
+				vertexBuffer.push_back( v4 );
+				vertexBuffer.push_back( v1 );
+
+				currentVert = ( uint ) vertexBuffer.size();
+			}
+			else if ( options.clean && options.invertWindingOrder )
+			{
+				vertexBuffer.push_back( v1 );
+				vertexBuffer.push_back( v2 );
+				vertexBuffer.push_back( v3 );
+				vertexBuffer.push_back( v4 );
+
+				currentVert = ( uint ) vertexBuffer.size();
+
+				indices.push_back( currentVert - 4 );
+				indices.push_back( currentVert - 1 );
+				indices.push_back( currentVert - 2 );
+
+				indices.push_back( currentVert - 1 );
+				indices.push_back( currentVert - 3 );
+				indices.push_back( currentVert - 4 );
+			}
+			else if ( options.clean && !options.invertWindingOrder )
+			{
+				vertexBuffer.push_back( v1 );
+				vertexBuffer.push_back( v2 );
+				vertexBuffer.push_back( v3 );
+				vertexBuffer.push_back( v4 );
+
+				currentVert = ( uint ) vertexBuffer.size();
+
+				indices.push_back( currentVert - 4 );
+				indices.push_back( currentVert - 3 );
+				indices.push_back( currentVert - 2 );
+
+				indices.push_back( currentVert - 3 );
+				indices.push_back( currentVert - 1 );
+				indices.push_back( currentVert - 4 );
+			}
+		}
+		else if ( iForVerts[ i ].size() == 3 )
+		{
+			VertexMaster v1;
+			VertexMaster v2;
+			VertexMaster v3;
+
+			v1.m_normalizedColor = Rgba8( 255 , 255 , 255 , 255 ).GetAsNormalizedFloat4();
+			v2.m_normalizedColor = Rgba8( 255 , 255 , 255 , 255 ).GetAsNormalizedFloat4();
+			v3.m_normalizedColor = Rgba8( 255 , 255 , 255 , 255 ).GetAsNormalizedFloat4();
+
+			v1.m_position = postions[ ( iForVerts[ i ][ 0 ] ) - 1 ];
+			v2.m_position = postions[ ( iForVerts[ i ][ 1 ] ) - 1 ];
+			v3.m_position = postions[ ( iForVerts[ i ][ 2 ] ) - 1 ];
+
+			v1.m_position = options.transform.TransformPosition3D( v1.m_position );
+			v2.m_position = options.transform.TransformPosition3D( v2.m_position );
+			v3.m_position = options.transform.TransformPosition3D( v3.m_position );
+
+			v1.m_normal = normals[ ( iForNormals[ i ][ 0 ] ) - 1 ];
+			v2.m_normal = normals[ ( iForNormals[ i ][ 1 ] ) - 1 ];
+			v3.m_normal = normals[ ( iForNormals[ i ][ 2 ] ) - 1 ];
+
+			v1.m_uvTexCoords = uvs[ ( iForTex[ i ][ 0 ] ) - 1 ];
+			v2.m_uvTexCoords = uvs[ ( iForTex[ i ][ 1 ] ) - 1 ];
+			v3.m_uvTexCoords = uvs[ ( iForTex[ i ][ 2 ] ) - 1 ];
+
+			if ( iForNormals.size() > 0 )
+			{
+				v1.m_normal = normals[ ( iForNormals[ i ][ 0 ] ) - 1 ];
+				v2.m_normal = normals[ ( iForNormals[ i ][ 1 ] ) - 1 ];
+				v3.m_normal = normals[ ( iForNormals[ i ][ 2 ] ) - 1 ];
+
+				v1.m_normal = options.transform.TransformPosition3D( v1.m_normal );
+				v2.m_normal = options.transform.TransformPosition3D( v2.m_normal );
+				v3.m_normal = options.transform.TransformPosition3D( v3.m_normal );
+			}
+
+			vertexBuffer.push_back( v1 );
+			vertexBuffer.push_back( v2 );
+			vertexBuffer.push_back( v3 );
+
+			currentVert = ( uint ) vertexBuffer.size();
+
+			if ( options.clean )
+			{
+				indices.push_back( currentVert - 3 );
+				indices.push_back( currentVert - 2 );
+				indices.push_back( currentVert - 1 );
+			}
+		}
+	}
+
+	for ( size_t i = 0; i < vertexBuffer.size(); i++ )
+	{
+		float lengthSquaredFromOrigin = vertexBuffer[ i ].m_position.GetLengthSquared();
+		if ( lengthSquaredFromOrigin > boundingRadiusSquare )
+		{
+			boundingRadiusSquare = lengthSquaredFromOrigin;
+		}
+	}
+
+	if ( options.generateNormals )
+	{
+		for ( size_t i = 0; i < vertexBuffer.size(); i += 3 )
+		{
+			Vec3 normal = CrossProduct3D( vertexBuffer[ i + 1 ].m_position - vertexBuffer[ i ].m_position , vertexBuffer[ i + 2 ].m_position - vertexBuffer[ i ].m_position );
+			vertexBuffer[ i ].m_normal = normal;
+			vertexBuffer[ i + 1 ].m_normal = normal;
+			vertexBuffer[ i + 2 ].m_normal = normal;
+		}
+	}
+
+	if ( options.generateTangents )
+	{
+		GenerateTangentsForVertexArray( vertexBuffer );
+	}
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
 void LoadOBJWithMaterial( GPUMesh* mesh , std::vector<tinyobj::shape_t>& shapes , std::vector<tinyobj::material_t>& material )
 {
 	UNUSED( mesh );

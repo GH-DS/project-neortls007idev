@@ -140,6 +140,9 @@
     <Filter Include="RendererDX12\D3D 12 Pipeline">
       <UniqueIdentifier>{78a9a170-82b8-4a2d-938b-39a9e5f3b6cc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\Dx12 Helper Headers">
+      <UniqueIdentifier>{2750cb82-9e95-45ba-81c1-937d149e9d13}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Rgba8.cpp">
@@ -1073,6 +1076,39 @@
     </ClInclude>
     <ClInclude Include="RendererDX12\ShaderDX12.hpp">
       <Filter>RendererDX12</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12compatibility.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12sdklayers.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12shader.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3d12video.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3dcommon.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\d3dx12.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxcore.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxcore_interface.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxgicommon.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\Dx12Helper\dxgiformat.h">
+      <Filter>ThirdParty\Dx12 Helper Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
