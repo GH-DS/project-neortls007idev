@@ -26,7 +26,7 @@ Game::Game()
 	m_clearScreenColor = RED;
 	m_colorLerpTimer = 0.f;
 
-	m_cubeTestTransform.SetPosition( Vec3( 0.f , 0.f , 90.f ) );
+	m_cubeTestTransform.SetPosition( Vec3( 0.f , 3.f , 90.f ) );
 	AABB3 box( Vec3( -0.5f , -0.5f , -0.5f ) , Vec3( 0.5f , 0.5f , 0.5f ) );
 	Rgba8 tint( 255 , 255 , 255 , 255 );
 
@@ -90,8 +90,8 @@ void Game::Update( float deltaSeconds )
 	//m_clearScreenColor = BLACK;
 	m_colorLerpTimer += deltaSeconds;
 
-	m_cubeTestTransform.m_yaw += deltaSeconds;
-	m_modelTestTransform.m_yaw += deltaSeconds;
+	m_cubeTestTransform.m_yaw += deltaSeconds * 5.f;
+	m_modelTestTransform.m_yaw += deltaSeconds * 5.f;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

@@ -312,7 +312,6 @@ HRESULT RenderContextDX12::CheckGraphicsAdapters( bool useWARPAdapter /*= false 
 
 void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU>& verts )
 {
-//	DX_SAFE_RELEASE( m_vertexBuffer );
 	// create default heap
 	// default heap is memory on the GPU. Only the GPU has access to this memory
 	// To get data into this heap, we will have to upload the data using
@@ -378,6 +377,9 @@ void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU
 
 void RenderContextDX12::CreateVertexBufferForVertexArray( uint numVerts , Vertex_PCU* verts )
 {
+ 	DX_SAFE_RELEASE( m_vertexBuffer );
+// 	DX_SAFE_RELEASE( m_vertexBufferUploadHeap );
+
 	CD3DX12_HEAP_PROPERTIES heapProp = CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_DEFAULT );
 	CD3DX12_RESOURCE_DESC bufferResourceDesc = CD3DX12_RESOURCE_DESC::Buffer( numVerts * sizeof( Vertex_PCU ) );
 	m_device->CreateCommittedResource(
@@ -439,7 +441,6 @@ void RenderContextDX12::CreateVertexBufferForVertexArray( uint numVerts , Vertex
 
 void RenderContextDX12::CreateIndexBufferForIndexArray( std::vector<uint>& indices )
 {
-//	DX_SAFE_RELEASE( m_indexBuffer );
 	if( indices.size() < 6 )
 	{
 		return;
@@ -630,6 +631,12 @@ void RenderContextDX12::EndFrame()
 {
 	Present();
 	Flush( m_fenceValue );
+
+	DX_SAFE_RELEASE( m_indexBuffer );
+	DX_SAFE_RELEASE( m_indexBufferUploadHeap );
+	DX_SAFE_RELEASE( m_vertexBuffer );
+	DX_SAFE_RELEASE( m_vertexBufferUploadHeap );
+
 //	DX_SAFE_RELEASE( m_vertexBufferUploadHeap );
 //	DX_SAFE_RELEASE( m_indexBufferUploadHeap );
 	//m_swapChain->Present();
