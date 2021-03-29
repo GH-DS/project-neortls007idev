@@ -142,8 +142,8 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	
 	CreateRootSignature();
 
-	m_defaultShader = new ShaderDX12( this , "Data/Shaders/default.hlsl" );
-	m_defaultShader->CreateFromFile( this , "Data/Shaders/default.hlsl" );
+	m_defaultShader = new ShaderDX12( this , "Data/Shaders/Triangle.hlsl" );
+	m_defaultShader->CreateFromFile( this , "Data/Shaders/Triangle.hlsl" );
 
 	m_currentShader = m_defaultShader;
 
@@ -164,7 +164,7 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	blendDesc.RenderTarget[ 0 ].LogicOp = D3D12_LOGIC_OP_NOOP;
 	blendDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	ZeroMemory( &m_rasterizerStateDesc , sizeof( D3D11_RASTERIZER_DESC ) );
+	ZeroMemory( &m_rasterizerStateDesc , sizeof( D3D12_RASTERIZER_DESC ) );
 	m_rasterizerStateDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	m_rasterizerStateDesc.CullMode = D3D12_CULL_MODE_BACK;
 	m_rasterizerStateDesc.FrontCounterClockwise = TRUE;
@@ -1089,6 +1089,19 @@ void RenderContextDX12::DrawIndexedVertexArray( uint numVerts , uint numIndices 
 	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_vertexBufferView ); // set the vertex buffer (using the vertex buffer view)
 	m_commandList->m_commandList->IASetIndexBuffer( &m_indexBufferView ); // set the vertex buffer (using the vertex buffer view)
 	m_commandList->m_commandList->DrawIndexedInstanced( numIndices , numVerts , 0 , 0 , 0 ); // finally draw 3 vertices (draw the triangle)
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+bool RenderContextDX12::CheckRaytracingSupport()
+{
+	D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
+//	DX::ThrowIfFailed( m_device->CheckFeatureSupport( D3D12_FEATURE_D3D12_OPTIONS5 , &options5 , sizeof( options5 ) ) );
+	if ( options5.RaytracingTier < D3D12_RAYTRACING_TIER_1_0 )
+	{
+		throw std::runtime_error( "Raytracing not supported on device" );
+	}
+	return true;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

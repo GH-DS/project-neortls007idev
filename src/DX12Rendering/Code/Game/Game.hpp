@@ -10,18 +10,20 @@ class Game
 {
 
 public:
-			Game();
-			void InitializeCameras();
+	Game();
+	void InitializeCameras();
 
-			~Game();
+	~Game();
 
-			void Update( float deltaSeconds );
-			void Render() const;
-			void UpdateFrameTime( float deltaSeconds ) const;
-			void UpdateCameraConstantBufferData() const;
-			void UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint = WHITE ) const;
+	void Update( float deltaSeconds );
+	void Render() const;
+	void UpdateFrameTime( float deltaSeconds ) const;
+	void UpdateCameraConstantBufferData() const;
+	void UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint = WHITE ) const;
+	void UpdateFromKeyboard();
 public:
-	Rgba8 m_clearScreenColor	= RED;
+	Rgba8 m_clearScreenColor	= Rgba8( 0 , 50 , 100 , 255 );
+	Rgba8 m_clearScreenColorRT	= Rgba8( 154 , 205 , 102 , 255 );
 	float m_colorLerpTimer		= 0.f;
 	float m_framTime			= 0.f;
 

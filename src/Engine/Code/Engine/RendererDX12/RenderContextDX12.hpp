@@ -83,10 +83,12 @@ public:
 	void					DrawVertexArray( std::vector<Vertex_PCU>& verts );
 	void					DrawIndexedVertexArray( std::vector<Vertex_PCU>& verts , std::vector<uint>& indices );
 	void					DrawIndexedVertexArray( uint numVerts , uint numIndices );
+	bool					CheckRaytracingSupport();
+	
 public:
 
 	Window*										m_window												= nullptr;
-	ID3D12Device*								m_device												= nullptr;
+	ID3D12Device5*								m_device												= nullptr;
 	ID3D12DeviceContext*						m_context												= nullptr;
 	void*										m_debugModule											= nullptr;
 	IDXGIDebug*									m_debug													= nullptr;
@@ -143,6 +145,9 @@ public:
 	ID3D12Resource*								m_depthStencilBuffer									= nullptr;
 	// Descriptor heap for depth buffer.
 	ID3D12DescriptorHeap*						m_dsvHeap												= nullptr;
+
+	// Boolean to switch between Raster and Raytracing mode
+	bool m_raster = true;
 
 private:
 	

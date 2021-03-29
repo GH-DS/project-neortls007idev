@@ -143,6 +143,9 @@
     <Filter Include="ThirdParty\Dx12 Helper Headers">
       <UniqueIdentifier>{2750cb82-9e95-45ba-81c1-937d149e9d13}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\DXR Helpers">
+      <UniqueIdentifier>{41b0426b-8b72-4249-9e1e-38bf8a726156}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Rgba8.cpp">
@@ -573,6 +576,21 @@
     </ClCompile>
     <ClCompile Include="RendererDX12\ShaderDX12.cpp">
       <Filter>RendererDX12</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\DXRHelper\BottomLevelASGenerator.cpp">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\DXRHelper\RaytracingPipelineGenerator.cpp">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\DXRHelper\RootSignatureGenerator.cpp">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\DXRHelper\ShaderBindingTableGenerator.cpp">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\DXRHelper\TopLevelASGenerator.cpp">
+      <Filter>ThirdParty\DXR Helpers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1109,6 +1127,24 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\Dx12Helper\dxgiformat.h">
       <Filter>ThirdParty\Dx12 Helper Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\DXRHelper\BottomLevelASGenerator.h">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\DXRHelper\DXRHelper.h">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\DXRHelper\RaytracingPipelineGenerator.h">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\DXRHelper\RootSignatureGenerator.h">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\DXRHelper\ShaderBindingTableGenerator.h">
+      <Filter>ThirdParty\DXR Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\DXRHelper\TopLevelASGenerator.h">
+      <Filter>ThirdParty\DXR Helpers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
