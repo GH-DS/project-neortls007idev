@@ -5,6 +5,7 @@
 	
 struct ID3D12PipelineState;
 struct ID3D12GraphicsCommandList;
+struct ID3D12GraphicsCommandList4;
 class  RenderContextDX12;
 class  CommandAllocatorDX12;
 
@@ -18,7 +19,7 @@ public:
 
 public:
 	RenderContextDX12*			m_owner			= nullptr;
-	ID3D12GraphicsCommandList*	m_commandList	= nullptr;
+	ID3D12GraphicsCommandList4*	m_commandList	= nullptr;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

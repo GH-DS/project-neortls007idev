@@ -1,15 +1,16 @@
 ﻿#include "Engine/Core/EngineCommon.hpp"
+#include "Engine/Core/OBJUtils.hpp"
+#include "Engine/Core/VertexUtils.hpp"
+#include "Engine/Input/VirtualKeyboard.hpp"
+#include "Engine/Math/MathUtils.hpp"
+#include "Engine/Primitives/AABB3.hpp"
+#include "Engine/Renderer/RenderContext.hpp"
+#include "Engine/RendererDX12/CommandListDX12.hpp"
 #include "Engine/RendererDX12/RenderContextDX12.hpp"
 #include "Engine/Time/Time.hpp"
 #include "Game/Game.hpp"
 #include "Game/GameCommon.hpp"
 #include "Game/TheApp.hpp"
-#include "Engine/Math/MathUtils.hpp"
-#include "Engine/Primitives/AABB3.hpp"
-#include "Engine/Core/VertexUtils.hpp"
-#include "Engine/RendererDX12/CommandListDX12.hpp"
-#include "Engine/Renderer/RenderContext.hpp"
-#include "Engine/Core/OBJUtils.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -23,7 +24,6 @@ Game::Game()
 {
 	InitializeCameras();
 	g_theInput->PushCursorSettings( CursorSettings( ABSOLUTE_MODE , MOUSE_IS_UNLOCKED , true ) );
-	m_clearScreenColor = RED;
 	m_colorLerpTimer = 0.f;
 
 	m_cubeTestTransform.SetPosition( Vec3( 0.f , 3.f , 90.f ) );
@@ -55,10 +55,10 @@ Game::~Game()
 
 void Game::InitializeCameras()
 {
-	m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
+	//m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
 	//m_gameCamera.SetOrthoView( 540.f , CLIENT_ASPECT );
-	m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
-	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
+	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
+	//m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -66,50 +66,43 @@ void Game::InitializeCameras()
 void Game::Update( float deltaSeconds )
 {
 	m_framTime = deltaSeconds;
-	float time = ( float ) GetCurrentTimeSeconds();
-	float lerpValue = SinDegrees( time * 100.f );
-	lerpValue *= lerpValue;
-	m_clearScreenColor.LerpColor( ORANGE , PURPLE , lerpValue );
+// 	float time = ( float ) GetCurrentTimeSeconds();
+// 	float lerpValue = SinDegrees( time * 100.f );
+// 	lerpValue *= lerpValue;
+// 	m_clearScreenColor.LerpColor( ORANGE , PURPLE , lerpValue );
 	
-	/*if ( ( m_colorLerpTimer >= 0.f ) && ( m_colorLerpTimer <= 3.f ) )
-	{
-		m_clearScreenColor.LerpColorOverTime( RED , GREEN , 3.f , m_colorLerpTimer );
-	}
-	else if ( ( m_colorLerpTimer >= 3.f ) && ( m_colorLerpTimer <= 6.f ) )
-	{
-		m_clearScreenColor.LerpColorOverTime( GREEN , BLUE , 6.f , m_colorLerpTimer );
-	}
-	else if ( ( m_colorLerpTimer >= 6.f ) && ( m_colorLerpTimer < 9.f ) )
-	{
-		m_clearScreenColor.LerpColorOverTime( BLUE , RED , 9.f , m_colorLerpTimer );
-	}
-	else
-	{
-		m_colorLerpTimer = 0.f;
-	}*/
-	//m_clearScreenColor = BLACK;
 	m_colorLerpTimer += deltaSeconds;
 
-	m_cubeTestTransform.m_yaw += deltaSeconds * 5.f;
-	m_modelTestTransform.m_yaw += deltaSeconds * 5.f;
+	//m_cubeTestTransform.m_yaw += deltaSeconds * 5.f;
+	//m_modelTestTransform.m_yaw += deltaSeconds * 5.f;
+	UpdateFromKeyboard();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
 void Game::Render() const
 {
-	g_theRenderer->ClearScreen( BLACK );
-	UpdateCameraConstantBufferData();
-	UpdateFrameTime( m_framTime );
-	UpdateModelMatrix( m_modelTestTransform.GetAsMatrix() , m_clearScreenColor );
 
-	g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts );
-	g_theRenderer->DrawVertexArray( m_modelMeshVerts );
-	g_theRenderer->CreateVertexBufferForVertexArray( m_cubeMeshVerts );
-	g_theRenderer->CreateIndexBufferForIndexArray( m_cubeMeshIndices );
-	UpdateModelMatrix( m_cubeTestTransform.GetAsMatrix() );
-	g_theRenderer->DrawIndexedVertexArray( m_cubeMeshVerts , m_cubeMeshIndices );
-	//g_theRenderer->TestDraw();
+	if( g_theRenderer->m_raster )
+	{
+		g_theRenderer->ClearScreen( m_clearScreenColor );
+		g_theRenderer->TestDraw();
+
+		//UpdateCameraConstantBufferData();
+		//UpdateFrameTime( m_framTime );
+		//UpdateModelMatrix( m_modelTestTransform.GetAsMatrix() , m_clearScreenColor );
+		//
+		//g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts );
+		//g_theRenderer->DrawVertexArray( m_modelMeshVerts );
+		//g_theRenderer->CreateVertexBufferForVertexArray( m_cubeMeshVerts );
+		//g_theRenderer->CreateIndexBufferForIndexArray( m_cubeMeshIndices );
+		//UpdateModelMatrix( m_cubeTestTransform.GetAsMatrix() );
+		//g_theRenderer->DrawIndexedVertexArray( m_cubeMeshVerts , m_cubeMeshIndices );
+	}
+	else
+	{
+		g_theRenderer->ClearScreen( m_clearScreenColorRT );
+	}
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -145,6 +138,16 @@ void Game::UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint /*= WHITE */ ) cons
 	modelData.normalizedModelColor = tintAsFloats;
 
 	g_theRenderer->m_commandList->m_commandList->SetGraphicsRoot32BitConstants( 2 , sizeof( ModelDataT ) / sizeof( float ) , &modelData , 0 );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void Game::UpdateFromKeyboard()
+{
+	if ( g_theInput->WasKeyJustPressed( KEY_SPACE ) )
+	{
+		g_theRenderer->m_raster = !g_theRenderer->m_raster;
+	}
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
