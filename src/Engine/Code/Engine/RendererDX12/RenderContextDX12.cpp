@@ -251,7 +251,7 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	m_device->CreateDepthStencilView( m_depthStencilBuffer , &depthStencilDesc , m_dsvHeap->GetCPUDescriptorHandleForHeapStart() );
 	
 	// DXR
-	CheckRaytracingSupport();
+	//CheckRaytracingSupport();
 	return resourceInit;
 }
 
