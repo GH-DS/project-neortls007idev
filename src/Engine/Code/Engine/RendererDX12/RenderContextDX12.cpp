@@ -58,7 +58,10 @@
 #pragma comment( lib, "d3dcompiler.lib" ) 
 #include "ThirdParty/Dx12Helper/d3dx12.h"
 #include <DirectXMath.h>
-#include "../Renderer/RenderContext.hpp"
+#include "Engine/Renderer/RenderContext.hpp"
+
+#include "ThirdParty/DXRHelper/DXRHelper.h"
+#include <directxmath.h>
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		
@@ -246,7 +249,9 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	);
 	m_dsvHeap->SetName( L"Depth/Stencil Resource Heap" );
 	m_device->CreateDepthStencilView( m_depthStencilBuffer , &depthStencilDesc , m_dsvHeap->GetCPUDescriptorHandleForHeapStart() );
-
+	
+	// DXR
+	CheckRaytracingSupport();
 	return resourceInit;
 }
 
@@ -1102,6 +1107,140 @@ bool RenderContextDX12::CheckRaytracingSupport()
 		throw std::runtime_error( "Raytracing not supported on device" );
 	}
 	return true;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+AccelerationStructureBuffers RenderContextDX12::CreateBottomLevelAS( std::vector<std::pair<Microsoft::WRL::ComPtr<ID3D12Resource> , uint32_t>> vVertexBuffers )
+{
+	nv_helpers_dx12::BottomLevelASGenerator bottomLevelAS;
+
+	// Adding all vertex buffers and not transforming their position.
+	for ( const auto& buffer : vVertexBuffers )
+	{
+		bottomLevelAS.AddVertexBuffer( buffer.first.Get() , 0 , buffer.second ,
+			sizeof( Vertex_PCU ) , 0 , 0 );
+	}
+
+	// The AS build requires some scratch space to store temporary information.
+	// The amount of scratch memory is dependent on the scene complexity.
+	UINT64 scratchSizeInBytes = 0;
+	// The final AS also needs to be stored in addition to the existing vertex
+	// buffers. It size is also dependent on the scene complexity.
+	UINT64 resultSizeInBytes = 0;
+
+	bottomLevelAS.ComputeASBufferSizes( m_device , false , &scratchSizeInBytes ,
+		&resultSizeInBytes );
+
+	// Once the sizes are obtained, the application is responsible for allocating
+	// the necessary buffers. Since the entire generation will be done on the GPU,
+	// we can directly allocate those on the default heap
+	AccelerationStructureBuffers buffers;
+	buffers.pScratch = nv_helpers_dx12::CreateBuffer(
+		m_device, scratchSizeInBytes ,
+		D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS , D3D12_RESOURCE_STATE_COMMON ,
+		nv_helpers_dx12::kDefaultHeapProps );
+
+	buffers.pResult = nv_helpers_dx12::CreateBuffer(
+		m_device , resultSizeInBytes ,
+		D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS ,
+		D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE ,
+		nv_helpers_dx12::kDefaultHeapProps );
+
+	// Build the acceleration structure. Note that this call integrates a barrier
+	// on the generated AS, so that it can be used to compute a top-level AS right
+	// after this method.
+	bottomLevelAS.Generate( m_commandList->m_commandList , buffers.pScratch.Get() ,
+		buffers.pResult.Get() , false , nullptr );
+
+	return buffers;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateTopLevelAS( const std::vector<std::pair<Microsoft::WRL::ComPtr<ID3D12Resource> , DirectX::XMMATRIX>>& instances )
+{
+	// Gather all the instances into the builder helper
+	for (size_t i = 0; i < instances.size(); i++) {
+	  m_topLevelASGenerator.AddInstance(instances[i].first.Get(),
+	                                    instances[i].second, static_cast<UINT>(i),
+	                                    static_cast<UINT>(0));
+	}
+
+	// As for the bottom-level AS, the building the AS requires some scratch space
+	// to store temporary data in addition to the actual AS. In the case of the
+	// top-level AS, the instance descriptors also need to be stored in GPU
+	// memory. This call outputs the memory requirements for each (scratch,
+	// results, instance descriptors) so that the application can allocate the
+	// corresponding memory
+	UINT64 scratchSize, resultSize, instanceDescsSize;
+
+	m_topLevelASGenerator.ComputeASBufferSizes( m_device , true , &scratchSize , &resultSize , &instanceDescsSize );
+
+	// Create the scratch and result buffers. Since the build is all done on GPU,
+	// those can be allocated on the default heap
+	m_topLevelASBuffers.pScratch = nv_helpers_dx12::CreateBuffer( m_device , scratchSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+																	D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nv_helpers_dx12::kDefaultHeapProps);
+
+	m_topLevelASBuffers.pResult = nv_helpers_dx12::CreateBuffer( m_device , resultSize, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
+																	D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, nv_helpers_dx12::kDefaultHeapProps);
+
+	// The buffer describing the instances: ID, shader binding information,
+	// matrices ... Those will be copied into the buffer by the helper through
+	// mapping, so the buffer has to be allocated on the upload heap.
+	m_topLevelASBuffers.pInstanceDesc = nv_helpers_dx12::CreateBuffer( m_device , instanceDescsSize, D3D12_RESOURCE_FLAG_NONE,
+																		D3D12_RESOURCE_STATE_GENERIC_READ, nv_helpers_dx12::kUploadHeapProps);
+
+	// After all the buffers are allocated, or if only an update is required, we
+	// can build the acceleration structure. Note that in the case of the update
+	// we also pass the existing AS as the 'previous' AS, so that it can be
+	// refitted in place.
+	m_topLevelASGenerator.Generate( m_commandList->m_commandList,
+	m_topLevelASBuffers.pScratch.Get(),
+	m_topLevelASBuffers.pResult.Get(),
+	m_topLevelASBuffers.pInstanceDesc.Get() );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateAccelerationStructures()
+{
+	// Build the bottom AS from the Triangle vertex buffer
+	AccelerationStructureBuffers bottomLevelBuffers =
+		CreateBottomLevelAS( { {m_vertexBuffer, 3} } );
+
+	const float indentityValues[] = {
+								1.f , 0.f , 0.f , 0.f ,
+								0.f , 1.f , 0.f , 0.f ,
+								0.f , 0.f , 1.f , 0.f ,
+								0.f , 0.f , 0.f , 1.f
+							  };
+
+	DirectX::XMMATRIX XM_IDENTITY( &indentityValues[0] );
+
+	// Just one instance for now
+	m_instances = { {bottomLevelBuffers.pResult, XM_IDENTITY } };
+	CreateTopLevelAS( m_instances );
+	// Flush the command list and wait for it to finish
+	m_commandList->m_commandList->Close();
+	ID3D12CommandList* const commandLists[] = {
+		m_commandList->m_commandList
+	};
+	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
+
+	m_fenceValue++;
+	m_commandQueue->SignalFence( m_fenceValue );
+
+	m_commandQueue->m_fence->WaitForFenceValue( m_fenceValue , m_fenceEvent );
+	WaitForSingleObject( m_fenceEvent , INFINITE );
+
+	// Once the command list is finished executing, reset it to be reused for
+	// rendering
+	ThrowIfFailed( m_commandList->m_commandList->Reset( m_commandAllocators[ m_currentBackBufferIndex ]->m_commandAllocator , m_pipelineState ) );
+
+	// Store the AS buffers. The rest of the buffers will be released once we exit
+	// the function
+	m_bottomLevelAS = bottomLevelBuffers.pResult;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

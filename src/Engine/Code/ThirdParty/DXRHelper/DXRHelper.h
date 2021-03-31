@@ -13,6 +13,8 @@
 
 #include <vector>
 
+using namespace DirectX;
+
 namespace nv_helpers_dx12
 {
 
