@@ -16,7 +16,6 @@
 
 extern RenderContextDX12*	g_theRenderer;
 extern TheApp*				g_theApp;
-static  bool				s_areDevconsoleCommandsLoaded = false;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -42,6 +41,10 @@ Game::Game()
 	LoadObjFileIntoVertexBuffer( modelverts , m_modelMeshIndices , buildMesh , "Data/Models/scifiFighter/mesh.obj" );
 	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts , modelverts );
 	m_modelTestTransform.SetPosition( Vec3( 0.f , 0.f , 75.f ) );
+
+	m_triangle.emplace_back( Vertex_PCU( Vec3( 0.f , 250.f , 0.0f ) , RED , Vec2( 0.5f , 1.f ) ) );
+	m_triangle.emplace_back( Vertex_PCU( Vec3( -250.f , -250.f , 0.0f ) , GREEN , Vec2::ZERO ) );
+	m_triangle.emplace_back( Vertex_PCU( Vec3( 250.f , -250.f , 0.0f ) , BLUE , Vec2::ONE ) );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -56,9 +59,9 @@ Game::~Game()
 void Game::InitializeCameras()
 {
 	//m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
-	//m_gameCamera.SetOrthoView( 540.f , CLIENT_ASPECT );
+	m_gameCamera.SetOrthoView( 540.f , CLIENT_ASPECT );
 	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
-	//m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
+	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -80,20 +83,20 @@ void Game::Update( float deltaSeconds )
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void Game::Render() const
+void Game::Render()
 {
 
 	if( g_theRenderer->m_raster )
 	{
 		g_theRenderer->ClearScreen( m_clearScreenColor );
-		g_theRenderer->TestDraw();
+		//g_theRenderer->TestDraw();
 
-		//UpdateCameraConstantBufferData();
-		//UpdateFrameTime( m_framTime );
-		//UpdateModelMatrix( m_modelTestTransform.GetAsMatrix() , m_clearScreenColor );
+		UpdateCameraConstantBufferData();
+		UpdateFrameTime( m_framTime );
+		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
 		//
-		//g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts );
-		//g_theRenderer->DrawVertexArray( m_modelMeshVerts );
+		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
+		g_theRenderer->DrawVertexArray( m_triangle );
 		//g_theRenderer->CreateVertexBufferForVertexArray( m_cubeMeshVerts );
 		//g_theRenderer->CreateIndexBufferForIndexArray( m_cubeMeshIndices );
 		//UpdateModelMatrix( m_cubeTestTransform.GetAsMatrix() );
@@ -102,6 +105,15 @@ void Game::Render() const
 	else
 	{
 		g_theRenderer->ClearScreen( m_clearScreenColorRT );
+		UpdateCameraConstantBufferData();
+		UpdateFrameTime( m_framTime );
+		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
+		//
+		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
+ 		g_theRenderer->CreateAccelerationStructures();
+		g_theRenderer->CreateRaytracingPipeline();
+		g_theRenderer->CreateRaytracingOutputBuffer();
+		g_theRenderer->CreateShaderResourceHeap();
 	}
 }
 

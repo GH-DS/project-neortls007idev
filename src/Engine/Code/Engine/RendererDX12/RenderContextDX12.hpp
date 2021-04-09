@@ -5,7 +5,8 @@
 #include <d3dcommon.h>
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
-	
+
+#include <dxcapi.h>
 #include <wrl/client.h>
 #include "ThirdParty/DXRHelper/TopLevelASGenerator.h"
 #include "ThirdParty/DXRHelper/ShaderBindingTableGenerator.h"
@@ -202,9 +203,9 @@ public:
 	AccelerationStructureBuffers				m_topLevelASBuffers;										// Storage for the top Level AS
 	
 	std::vector<std::pair<Microsoft::WRL::ComPtr<ID3D12Resource> , DirectX::XMMATRIX>> m_instances;
-//	Microsoft::WRL::ComPtr<IDxcBlob> m_rayGenLibrary;
-//	Microsoft::WRL::ComPtr<IDxcBlob> m_hitLibrary;
-//	Microsoft::WRL::ComPtr<IDxcBlob> m_missLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob> m_rayGenLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob> m_hitLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob> m_missLibrary;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rayGenSignature;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_hitSignature;
@@ -218,11 +219,9 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_outputResource;
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvUavHeap;
-	nv_helpers_dx12::ShaderBindingTableGenerator m_sbtHelper;
+//	nv_helpers_dx12::ShaderBindingTableGenerator m_sbtHelper;
 	
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_sbtStorage;
-private:
-	
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_sbtStorage;	
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
