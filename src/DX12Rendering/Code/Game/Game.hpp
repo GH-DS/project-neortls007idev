@@ -20,12 +20,23 @@ public:
 			void UpdateFrameTime( float deltaSeconds ) const;
 			void UpdateCameraConstantBufferData() const;
 			void UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint = WHITE ) const;
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+//				METHODS TO HANDLE USER INPUT
+//--------------------------------------------------------------------------------------------------------------------------------------------
+			void UpdateFromKeyBoard( float deltaSeconds );
+			void CameraPositionUpdateOnInput( float deltaSeconds );
+
 public:
 	Rgba8 m_clearScreenColor	= RED;
 	float m_colorLerpTimer		= 0.f;
 	float m_framTime			= 0.f;
 
 	mutable Camera						m_gameCamera;
+	Vec3								m_cameraPosition									= Vec3::ZERO;
+	float								m_pitch												= 0.f;
+	float								m_yaw												= 0.f;
+
 	Transform							m_cubeTestTransform;
 	mutable std::vector<Vertex_PCU>		m_cubeMeshVerts;
 	mutable std::vector<uint>			m_cubeMeshIndices;

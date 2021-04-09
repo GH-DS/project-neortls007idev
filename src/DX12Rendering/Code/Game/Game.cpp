@@ -10,6 +10,7 @@
 #include "Engine/RendererDX12/CommandListDX12.hpp"
 #include "Engine/Renderer/RenderContext.hpp"
 #include "Engine/Core/OBJUtils.hpp"
+#include "Engine/Input/VirtualKeyboard.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -22,7 +23,7 @@ static  bool				s_areDevconsoleCommandsLoaded = false;
 Game::Game()
 {
 	InitializeCameras();
-	g_theInput->PushCursorSettings( CursorSettings( ABSOLUTE_MODE , MOUSE_IS_UNLOCKED , true ) );
+	g_theInput->PushCursorSettings( CursorSettings( RELATIVE_MODE , MOUSE_IS_UNLOCKED , false ) );
 	m_clearScreenColor = RED;
 	m_colorLerpTimer = 0.f;
 
@@ -92,6 +93,8 @@ void Game::Update( float deltaSeconds )
 
 	m_cubeTestTransform.m_yaw += deltaSeconds * 5.f;
 	m_modelTestTransform.m_yaw += deltaSeconds * 5.f;
+
+	UpdateFromKeyBoard( deltaSeconds );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -145,6 +148,74 @@ void Game::UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint /*= WHITE */ ) cons
 	modelData.normalizedModelColor = tintAsFloats;
 
 	g_theRenderer->m_commandList->m_commandList->SetGraphicsRoot32BitConstants( 2 , sizeof( ModelDataT ) / sizeof( float ) , &modelData , 0 );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void Game::UpdateFromKeyBoard( float deltaSeconds )
+{
+	CameraPositionUpdateOnInput( deltaSeconds );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void Game::CameraPositionUpdateOnInput( float deltaSeconds )
+{
+	Vec3 rotation = Vec3::ZERO;
+
+	Mat44 cameraTransform	= m_gameCamera.GetCameraTransform().GetAsMatrix();
+	Vec3 forwardVector		= -cameraTransform.GetKBasis3D();
+	Vec3 rightVector		= cameraTransform.GetIBasis3D();
+	Vec3 UpVector			= Vec3::UNIT_VECTOR_ALONG_J_BASIS;
+
+	float speed = 1.0f;
+
+	if ( g_theInput->IsKeyHeldDown( KEY_SHIFT ) )
+	{
+		speed = 5.f;
+	}
+
+	if ( g_theInput->IsKeyHeldDown( 'A' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() - rightVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'D' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() + rightVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'W' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() + forwardVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'S' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() - forwardVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'Q' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() - UpVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'E' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() + UpVector * speed * deltaSeconds );
+	}
+
+	if ( g_theInput->WasKeyJustPressed( 'O' ) )
+	{
+		m_gameCamera.SetPosition( Vec3::ZERO );
+		m_yaw				= 0.f;
+		m_pitch				= 0.f;
+	}
+
+	Vec2 mousePos		= g_theInput->GetRelativeMovement();
+	
+	m_pitch -= mousePos.y * speed * deltaSeconds;
+	m_yaw	-= mousePos.x * speed * deltaSeconds;
+
+	m_pitch = Clamp( m_pitch , -90.f , 90.f );
+
+	m_gameCamera.SetPitchYawRollRotation( m_pitch , m_yaw , 0.f );
+	m_gameCamera.ConstructCameraViewFrustum();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
