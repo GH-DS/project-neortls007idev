@@ -149,8 +149,8 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	
 	CreateRootSignature();
 
-	m_defaultShader = new ShaderDX12( this , "Data/Shaders/triangle.hlsl" );
-	m_defaultShader->CreateFromFile( this , "Data/Shaders/triangle.hlsl" );
+	m_defaultShader = new ShaderDX12( this , "Data/Shaders/default.hlsl" );
+	m_defaultShader->CreateFromFile( this , "Data/Shaders/default.hlsl" );
 
 	m_currentShader = m_defaultShader;
 
@@ -942,7 +942,8 @@ void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 	}
 	else
 	{
- 		m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
+// 		D3D12_CPU_DESCRIPTOR_HANDLE rtv = m_srvUavHeap.Get()->GetCPUDescriptorHandleForHeapStart();
+//  		m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
 	}
 }
 
@@ -1188,7 +1189,7 @@ AccelerationStructureBuffers RenderContextDX12::CreateBottomLevelAS( std::vector
 	for ( const auto& buffer : vVertexBuffers )
 	{
 		bottomLevelAS.AddVertexBuffer( buffer.first.Get() , 0 , buffer.second ,
-			sizeof( Vertex_PCU ) , 0 , 0 );
+			sizeof( Vertex_PCU ) , nullptr , 0 );
 	}
 
 	// The AS build requires some scratch space to store temporary information.
@@ -1291,21 +1292,21 @@ void RenderContextDX12::CreateAccelerationStructures()
 	m_instances = { {bottomLevelBuffers.pResult, XM_IDENTITY } };
 	CreateTopLevelAS( m_instances );
 	// Flush the command list and wait for it to finish
-//	m_commandList->m_commandList->Close();
-//	ID3D12CommandList* const commandLists[] = {
-//		m_commandList->m_commandList
-//	};
-//	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
+	m_commandList->m_commandList->Close();
+	ID3D12CommandList* const commandLists[] = {
+		m_commandList->m_commandList
+	};
+	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
 //
-//	m_fenceValue++;
-//	m_commandQueue->SignalFence( m_fenceValue );
+	m_fenceValue++;
+	m_commandQueue->SignalFence( m_fenceValue );
 //
-//	m_commandQueue->m_fence->WaitForFenceValue( m_fenceValue , m_fenceEvent );
+	m_commandQueue->m_fence->WaitForFenceValue( m_fenceValue , m_fenceEvent );
 	//WaitForSingleObject( m_fenceEvent , INFINITE );
 
 	// Once the command list is finished executing, reset it to be reused for
 	// rendering
-//	ThrowIfFailed( m_commandList->m_commandList->Reset( m_commandAllocators[ m_currentBackBufferIndex ]->m_commandAllocator , m_pipelineState ) );
+	ThrowIfFailed( m_commandList->m_commandList->Reset( m_commandAllocators[ m_currentBackBufferIndex ]->m_commandAllocator , m_pipelineState ) );
 
 	// Store the AS buffers. The rest of the buffers will be released once we exit
 	// the function
@@ -1568,6 +1569,19 @@ void RenderContextDX12::ClearScreenRT()
 // #DXR
 // Bind the descriptor heap giving access to the top-level acceleration
 // structure, as well as the raytracing output
+	Rgba8 clearColor = BLACK;
+	float clearFloats[ 4 ];
+	float scaleToFloat = 1 / 255.f;
+
+	clearFloats[ 0 ] = ( float ) clearColor.r * scaleToFloat;
+	clearFloats[ 1 ] = ( float ) clearColor.g * scaleToFloat;
+	clearFloats[ 2 ] = ( float ) clearColor.b * scaleToFloat;
+	clearFloats[ 3 ] = ( float ) clearColor.a * scaleToFloat;
+	
+	//D3D12_GPU_DESCRIPTOR_HANDLE rtv = m_srvUavHeap.Get()->GetGPUDescriptorHandleForHeapStart();
+	//m_commandList->m_commandList->ClearUnorderedAccessViewFloat( rtv , m_srvUavHeap.Get()->GetCPUDescriptorHandleForHeapStart() , m_outputResource.Get() , clearFloats , 0 , 0 );
+	//RenderTargetView( rtv , clearFloats , 0 , nullptr );
+	
 	std::vector<ID3D12DescriptorHeap*> heaps = { m_srvUavHeap.Get() };
 	m_commandList->m_commandList->SetDescriptorHeaps( static_cast< UINT >( heaps.size() ) ,
 		heaps.data() );

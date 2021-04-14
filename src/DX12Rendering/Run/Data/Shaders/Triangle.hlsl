@@ -27,7 +27,7 @@ struct VertexToFragment_t
 // this stops working). 
 static float3 SOME_POSITIONS[ 3 ] =
 {
-   float3( 0.f , 0.25f , 0.0f ) ,
+   float3( 0.f , 0.5f , 0.0f ) ,
    float3( -0.25f , -0.25f , 0.0f ) ,
    float3( 0.25f , -0.25f , 0.0f ) ,
 };

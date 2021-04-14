@@ -2,7 +2,8 @@
 
 // #DXR Extra - Another ray type
 struct ShadowHitInfo
-{ bool isHit;
+{
+	bool isHit;
 };
 
 // #DXR Extra - Another ray type
@@ -28,5 +29,5 @@ StructuredBuffer<STriVertex> BTriVertex : register(t0);
                     BTriVertex[vertId + 2].color * barycentrics.z;
 
 	payload.colorAndDistance = float4(hitColor, RayTCurrent());
-//  payload.colorAndDistance = float4( 1.f , 0.f , 0.f , RayTCurrent() );
+  payload.colorAndDistance = float4( 0.f , 1.f , 0.f , RayTCurrent() );
 }

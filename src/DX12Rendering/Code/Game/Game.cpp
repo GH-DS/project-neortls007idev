@@ -42,9 +42,10 @@ Game::Game()
 	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts , modelverts );
 	m_modelTestTransform.SetPosition( Vec3( 0.f , 0.f , 75.f ) );
 
-	m_triangle.emplace_back( Vertex_PCU( Vec3( 0.f , 250.f , 0.0f ) , RED , Vec2( 0.5f , 1.f ) ) );
-	m_triangle.emplace_back( Vertex_PCU( Vec3( -250.f , -250.f , 0.0f ) , GREEN , Vec2::ZERO ) );
-	m_triangle.emplace_back( Vertex_PCU( Vec3( 250.f , -250.f , 0.0f ) , BLUE , Vec2::ONE ) );
+	m_triangle.emplace_back( Vertex_PCU( Vec3( 0.f , 0.5f , 0.0f ) , GREEN , Vec2::ZERO ) );
+	m_triangle.emplace_back( Vertex_PCU( Vec3( -0.25f , -0.25f , 0.0f ) , BLUE , Vec2::ONE ) );
+	m_triangle.emplace_back( Vertex_PCU( Vec3( 0.25f , -0.25f , 0.0f ) , RED , Vec2( 0.5f , 1.f ) ) );
+
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ Game::~Game()
 void Game::InitializeCameras()
 {
 	//m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
-	m_gameCamera.SetOrthoView( 540.f , CLIENT_ASPECT );
+	m_gameCamera.SetOrthoView( 0.5f , 1.f );
 	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
 	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
 }
@@ -69,13 +70,13 @@ void Game::InitializeCameras()
 void Game::Update( float deltaSeconds )
 {
 	m_framTime = deltaSeconds;
-// 	float time = ( float ) GetCurrentTimeSeconds();
+	float time = ( float ) GetCurrentTimeSeconds();
 // 	float lerpValue = SinDegrees( time * 100.f );
 // 	lerpValue *= lerpValue;
 // 	m_clearScreenColor.LerpColor( ORANGE , PURPLE , lerpValue );
 	
 	m_colorLerpTimer += deltaSeconds;
-
+//	m_triangle[ 0 ].m_position = Vec3( 0.f , 0.5f + SinDegrees( 50.f * time ) , 0.0f );
 	//m_cubeTestTransform.m_yaw += deltaSeconds * 5.f;
 	//m_modelTestTransform.m_yaw += deltaSeconds * 5.f;
 	UpdateFromKeyboard();
