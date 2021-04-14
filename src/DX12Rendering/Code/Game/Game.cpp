@@ -104,16 +104,18 @@ void Game::Render()
 	}
 	else
 	{
-		g_theRenderer->ClearScreen( m_clearScreenColorRT );
-		UpdateCameraConstantBufferData();
-		UpdateFrameTime( m_framTime );
-		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
 		//
+// 		UpdateCameraConstantBufferData();
+// 		UpdateFrameTime( m_framTime );
+//		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
+		g_theRenderer->ClearScreen( m_clearScreenColorRT );
 		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
  		g_theRenderer->CreateAccelerationStructures();
-		g_theRenderer->CreateRaytracingPipeline();
 		g_theRenderer->CreateRaytracingOutputBuffer();
 		g_theRenderer->CreateShaderResourceHeap();
+		g_theRenderer->CreateShaderBindingTable();
+		g_theRenderer->ClearScreenRT();
+		//g_theRenderer->DispatchRays();
 	}
 }
 

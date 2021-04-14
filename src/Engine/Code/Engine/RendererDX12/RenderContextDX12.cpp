@@ -149,8 +149,8 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	
 	CreateRootSignature();
 
-	m_defaultShader = new ShaderDX12( this , "Data/Shaders/default.hlsl" );
-	m_defaultShader->CreateFromFile( this , "Data/Shaders/default.hlsl" );
+	m_defaultShader = new ShaderDX12( this , "Data/Shaders/triangle.hlsl" );
+	m_defaultShader->CreateFromFile( this , "Data/Shaders/triangle.hlsl" );
 
 	m_currentShader = m_defaultShader;
 
@@ -255,7 +255,9 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	
 	// DXR
 	CheckRaytracingSupport();
-
+	//g_theRenderer->CreateRaytracingPipeline();
+	CreateRaytracingPipeline();
+	m_raster = false;
 	return resourceInit;
 }
 
@@ -719,36 +721,85 @@ void* RenderContextDX12::CreateFenceEventHandle()
 
 void RenderContextDX12::Present()
 {
-	auto backBuffer = t_backBuffers[ m_currentBackBufferIndex ];
+	if( m_raster )
+	{
+		auto backBuffer = t_backBuffers[ m_currentBackBufferIndex ];
 
-	D3D12_RESOURCE_BARRIER barrier;
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-	barrier.Transition.pResource = backBuffer;
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = backBuffer;
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 
+		
+		m_commandList->m_commandList->ResourceBarrier( 1 , &barrier );
+
+		m_commandList->m_commandList->Close();
+
+		ID3D12CommandList* const commandLists[] = {
+			m_commandList->m_commandList
+		};
+		m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
+
+		m_frameFenceValues[ m_currentBackBufferIndex ] = m_commandQueue->SignalFence( m_fenceValue );
+		//Signal( g_CommandQueue , g_Fence , g_FenceValue );
+
+		UINT syncInterval = m_isVsyncEnabled ? 1 : 0;
+		UINT presentFlags = m_hasTearingSupport && !m_isVsyncEnabled ? DXGI_PRESENT_ALLOW_TEARING : 0;
+		t_swapchain->Present( syncInterval , presentFlags );
+
+		m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
+
+		m_commandQueue->m_fence->WaitForFenceValue( m_frameFenceValues[ m_currentBackBufferIndex ] , ( void* ) m_fenceEvent );
+	}
+	else
+	{
+			CD3DX12_RESOURCE_BARRIER transition = CD3DX12_RESOURCE_BARRIER::Transition(
+	        m_outputResource.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+	        D3D12_RESOURCE_STATE_COPY_SOURCE);
+	    m_commandList->m_commandList->ResourceBarrier(1, &transition);
+	    transition = CD3DX12_RESOURCE_BARRIER::Transition(
+			t_backBuffers[ m_currentBackBufferIndex ], D3D12_RESOURCE_STATE_RENDER_TARGET,
+	        D3D12_RESOURCE_STATE_COPY_DEST);
+	    m_commandList->m_commandList->ResourceBarrier(1, &transition);
 	
-	m_commandList->m_commandList->ResourceBarrier( 1 , &barrier );
+	    m_commandList->m_commandList->CopyResource( t_backBuffers[ m_currentBackBufferIndex ],
+	                                m_outputResource.Get());
+	
+	    transition = CD3DX12_RESOURCE_BARRIER::Transition(
+			t_backBuffers[ m_currentBackBufferIndex ], D3D12_RESOURCE_STATE_COPY_DEST,
+	        D3D12_RESOURCE_STATE_RENDER_TARGET);
+	    m_commandList->m_commandList->ResourceBarrier(1, &transition);
+	
+	  // Indicate that the back buffer will now be used to present.
+	    transition = CD3DX12_RESOURCE_BARRIER::Transition(
+													t_backBuffers[ m_currentBackBufferIndex ],
+	                                        D3D12_RESOURCE_STATE_RENDER_TARGET,
+	                                        D3D12_RESOURCE_STATE_PRESENT);
+	    m_commandList->m_commandList->ResourceBarrier(1, &transition);
 
-	m_commandList->m_commandList->Close();
+		ThrowIfFailed(m_commandList->m_commandList->Close());
 
-	ID3D12CommandList* const commandLists[] = {
-		m_commandList->m_commandList
-	};
-	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
 
-	m_frameFenceValues[ m_currentBackBufferIndex ] = m_commandQueue->SignalFence( m_fenceValue );
-	//Signal( g_CommandQueue , g_Fence , g_FenceValue );
+		ID3D12CommandList* const commandLists[] = {
+			m_commandList->m_commandList
+		};
+		m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
 
-	UINT syncInterval = m_isVsyncEnabled ? 1 : 0;
-	UINT presentFlags = m_hasTearingSupport && !m_isVsyncEnabled ? DXGI_PRESENT_ALLOW_TEARING : 0;
-	t_swapchain->Present( syncInterval , presentFlags );
+		m_frameFenceValues[ m_currentBackBufferIndex ] = m_commandQueue->SignalFence( m_fenceValue );
+		//Signal( g_CommandQueue , g_Fence , g_FenceValue );
 
-	m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
+		UINT syncInterval = m_isVsyncEnabled ? 1 : 0;
+		UINT presentFlags = m_hasTearingSupport && !m_isVsyncEnabled ? DXGI_PRESENT_ALLOW_TEARING : 0;
+		t_swapchain->Present( syncInterval , presentFlags );
 
-	m_commandQueue->m_fence->WaitForFenceValue( m_frameFenceValues[ m_currentBackBufferIndex ] , ( void* ) m_fenceEvent );
+		m_currentBackBufferIndex = ( uint8_t ) t_swapchain->GetCurrentBackBufferIndex();
+
+		m_commandQueue->m_fence->WaitForFenceValue( m_frameFenceValues[ m_currentBackBufferIndex ] , ( void* ) m_fenceEvent );
+  }
+
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -828,7 +879,6 @@ void RenderContextDX12::UpdateBufferResource( CommandListDX12* commandList , ID3
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-
 void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 {
 
@@ -882,11 +932,18 @@ void RenderContextDX12::ClearScreen( const Rgba8& clearColor )
 	// get a handle to the depth/stencil buffer
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle( m_dsvHeap->GetCPUDescriptorHandleForHeapStart() );
 
+		m_commandList->m_commandList->OMSetRenderTargets( 1 , &rtv , FALSE , &dsvHandle );
 	// set the render target for the output merger stage (the output of the pipeline)
-	m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
-	m_commandList->m_commandList->ClearDepthStencilView( m_dsvHeap->GetCPUDescriptorHandleForHeapStart() , D3D12_CLEAR_FLAG_DEPTH , 1.0f , 0 , 0 , nullptr );
-	m_commandList->m_commandList->OMSetRenderTargets( 1 , &rtv , FALSE , &dsvHandle );
-	m_commandList->m_commandList->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+	if( m_raster )
+	{
+		m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
+		m_commandList->m_commandList->ClearDepthStencilView( m_dsvHeap->GetCPUDescriptorHandleForHeapStart() , D3D12_CLEAR_FLAG_DEPTH , 1.0f , 0 , 0 , nullptr );
+		m_commandList->m_commandList->IASetPrimitiveTopology( D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
+	}
+	else
+	{
+ 		m_commandList->m_commandList->ClearRenderTargetView( rtv , clearFloats , 0 , nullptr );
+	}
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1234,21 +1291,21 @@ void RenderContextDX12::CreateAccelerationStructures()
 	m_instances = { {bottomLevelBuffers.pResult, XM_IDENTITY } };
 	CreateTopLevelAS( m_instances );
 	// Flush the command list and wait for it to finish
-	m_commandList->m_commandList->Close();
-	ID3D12CommandList* const commandLists[] = {
-		m_commandList->m_commandList
-	};
-	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
-
-	m_fenceValue++;
-	m_commandQueue->SignalFence( m_fenceValue );
-
-	m_commandQueue->m_fence->WaitForFenceValue( m_fenceValue , m_fenceEvent );
+//	m_commandList->m_commandList->Close();
+//	ID3D12CommandList* const commandLists[] = {
+//		m_commandList->m_commandList
+//	};
+//	m_commandQueue->m_commandQueue->ExecuteCommandLists( _countof( commandLists ) , commandLists );
+//
+//	m_fenceValue++;
+//	m_commandQueue->SignalFence( m_fenceValue );
+//
+//	m_commandQueue->m_fence->WaitForFenceValue( m_fenceValue , m_fenceEvent );
 	//WaitForSingleObject( m_fenceEvent , INFINITE );
 
 	// Once the command list is finished executing, reset it to be reused for
 	// rendering
-	ThrowIfFailed( m_commandList->m_commandList->Reset( m_commandAllocators[ m_currentBackBufferIndex ]->m_commandAllocator , m_pipelineState ) );
+//	ThrowIfFailed( m_commandList->m_commandList->Reset( m_commandAllocators[ m_currentBackBufferIndex ]->m_commandAllocator , m_pipelineState ) );
 
 	// Store the AS buffers. The rest of the buffers will be released once we exit
 	// the function
@@ -1310,6 +1367,7 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	// using the [shader("xxx")] syntax
 	pipeline.AddLibrary( m_rayGenLibrary.Get() , { L"RayGen" } );
 	pipeline.AddLibrary( m_missLibrary.Get() , { L"Miss" } );
+	
 	pipeline.AddLibrary( m_hitLibrary.Get() , { L"ClosestHit" } );
 
 	// To be used, each DX12 shader needs a root signature defining which
@@ -1318,6 +1376,10 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	m_missSignature = CreateMissSignature();
 	m_hitSignature = CreateHitSignature();
 
+// 	m_shadowLibrary = nv_helpers_dx12::CompileShaderLibrary( L"Data/Shaders/DXR/ShadowRay.hlsl" );
+// 	pipeline.AddLibrary( m_shadowLibrary.Get() , { L"ShadowClosestHit", L"ShadowMiss" } );
+// 	m_shadowSignature = CreateMissSignature();
+	
 	// 3 different shaders can be invoked to obtain an intersection: an
 	// intersection shader is called
 	// when hitting the bounding box of non-triangular geometry. This is beyond
@@ -1337,6 +1399,10 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	// colors
 	pipeline.AddHitGroup( L"HitGroup" , L"ClosestHit" );
 
+	// #DXR Extra - Another ray type
+	// Hit group for all geometry when hit by a shadow ray
+//	pipeline.AddHitGroup( L"ShadowHitGroup" , L"ShadowClosestHit" );
+	
 	// The following section associates the root signature to each shader. Note
 	// that we can explicitly show that some shaders share the same root signature
 	// (eg. Miss and ShadowMiss). Note that the hit shaders are now only referred
@@ -1346,6 +1412,11 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	pipeline.AddRootSignatureAssociation( m_missSignature.Get() , { L"Miss" } );
 	pipeline.AddRootSignatureAssociation( m_hitSignature.Get() , { L"HitGroup" } );
 
+	// #DXR Extra - Another ray type
+//	pipeline.AddRootSignatureAssociation( m_shadowSignature.Get() , { L"ShadowHitGroup" } );
+	// #DXR Extra - Another ray type
+//	pipeline.AddRootSignatureAssociation( m_missSignature.Get() , { L"Miss", L"ShadowMiss" } );
+	
 	// The payload size defines the maximum size of the data carried by the rays,
 	// ie. the the data
 	// exchanged between shaders, such as the HitInfo structure in the HLSL code.
@@ -1433,6 +1504,176 @@ void RenderContextDX12::CreateShaderResourceHeap()
 		m_topLevelASBuffers.pResult->GetGPUVirtualAddress();
 	// Write the acceleration structure view in the heap
 	m_device->CreateShaderResourceView( nullptr , &srvDesc , srvHandle );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateShaderBindingTable()
+{
+	// The SBT helper class collects calls to Add*Program.  If called several
+  // times, the helper must be emptied before re-adding shaders.
+	m_sbtHelper.Reset();
+
+	// The pointer to the beginning of the heap is the only parameter required by
+	// shaders without root parameters
+	D3D12_GPU_DESCRIPTOR_HANDLE srvUavHeapHandle =
+		m_srvUavHeap->GetGPUDescriptorHandleForHeapStart();
+
+	// The helper treats both root parameter pointers and heap pointers as void*,
+	// while DX12 uses the
+	// D3D12_GPU_DESCRIPTOR_HANDLE to define heap pointers. The pointer in this
+	// struct is a UINT64, which then has to be reinterpreted as a pointer.
+	auto heapPointer = reinterpret_cast< UINT64* >( srvUavHeapHandle.ptr );
+
+	// The ray generation only uses heap data
+	m_sbtHelper.AddRayGenerationProgram( L"RayGen" , { heapPointer } );
+
+	// The miss and hit shaders do not access any external resources: instead they
+	// communicate their results through the ray payload
+	m_sbtHelper.AddMissProgram( L"Miss" , {} );
+	m_sbtHelper.AddMissProgram( L"Miss" , {} );
+
+	// #DXR Extra - Another ray type
+//	m_sbtHelper.AddMissProgram( L"ShadowMiss" , {} );
+	
+	// Adding the triangle hit shader
+	m_sbtHelper.AddHitGroup( L"HitGroup" ,
+		{ reinterpret_cast< void* >( m_vertexBuffer->GetGPUVirtualAddress() ) } );
+
+	// #DXR Extra - Another ray type
+//	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
+	
+	// Compute the size of the SBT given the number of shaders and their
+	// parameters
+	uint32_t sbtSize = m_sbtHelper.ComputeSBTSize();
+
+	// Create the SBT on the upload heap. This is required as the helper will use
+	// mapping to write the SBT contents. After the SBT compilation it could be
+	// copied to the default heap for performance.
+	m_sbtStorage = nv_helpers_dx12::CreateBuffer(
+		m_device , sbtSize , D3D12_RESOURCE_FLAG_NONE ,
+		D3D12_RESOURCE_STATE_GENERIC_READ , nv_helpers_dx12::kUploadHeapProps );
+	if ( !m_sbtStorage )
+	{
+		throw std::logic_error( "Could not allocate the shader binding table" );
+	}
+	// Compile the SBT from the shader and parameters info
+	m_sbtHelper.Generate( m_sbtStorage.Get() , m_rtStateObjectProps.Get() );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::ClearScreenRT()
+{	
+// #DXR
+// Bind the descriptor heap giving access to the top-level acceleration
+// structure, as well as the raytracing output
+	std::vector<ID3D12DescriptorHeap*> heaps = { m_srvUavHeap.Get() };
+	m_commandList->m_commandList->SetDescriptorHeaps( static_cast< UINT >( heaps.size() ) ,
+		heaps.data() );
+
+	// On the last frame, the raytracing output was used as a copy source, to
+	// copy its contents into the render target. Now we need to transition it to
+	// a UAV so that the shaders can write in it.
+	CD3DX12_RESOURCE_BARRIER transition = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_outputResource.Get() , D3D12_RESOURCE_STATE_COPY_SOURCE ,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS );
+	m_commandList->m_commandList->ResourceBarrier( 1 , &transition );
+
+	// Setup the raytracing task
+	D3D12_DISPATCH_RAYS_DESC desc = {};
+	// The layout of the SBT is as follows: ray generation shader, miss
+	// shaders, hit groups. As described in the CreateShaderBindingTable method,
+	// all SBT entries of a given type have the same size to allow a fixed
+	// stride.
+
+	// The ray generation shaders are always at the beginning of the SBT.
+	uint32_t rayGenerationSectionSizeInBytes =
+		m_sbtHelper.GetRayGenSectionSize();
+	desc.RayGenerationShaderRecord.StartAddress =
+		m_sbtStorage->GetGPUVirtualAddress();
+	desc.RayGenerationShaderRecord.SizeInBytes =
+		rayGenerationSectionSizeInBytes;
+
+	// The miss shaders are in the second SBT section, right after the ray
+	// generation shader. We have one miss shader for the camera rays and one
+	// for the shadow rays, so this section has a size of 2*m_sbtEntrySize. We
+	// also indicate the stride between the two miss shaders, which is the size
+	// of a SBT entry
+	uint32_t missSectionSizeInBytes = m_sbtHelper.GetMissSectionSize();
+	desc.MissShaderTable.StartAddress =
+		m_sbtStorage->GetGPUVirtualAddress() + rayGenerationSectionSizeInBytes;
+	desc.MissShaderTable.SizeInBytes = missSectionSizeInBytes;
+	desc.MissShaderTable.StrideInBytes = m_sbtHelper.GetMissEntrySize();
+
+	// The hit groups section start after the miss shaders. In this sample we
+	// have one 1 hit group for the triangle
+	uint32_t hitGroupsSectionSize = m_sbtHelper.GetHitGroupSectionSize();
+	desc.HitGroupTable.StartAddress = m_sbtStorage->GetGPUVirtualAddress() +
+		rayGenerationSectionSizeInBytes +
+		missSectionSizeInBytes;
+	desc.HitGroupTable.SizeInBytes = hitGroupsSectionSize;
+	desc.HitGroupTable.StrideInBytes = m_sbtHelper.GetHitGroupEntrySize();
+
+	// Dimensions of the image to render, identical to a kernel launch dimension
+	desc.Width = m_window->GetClientWidth();
+	desc.Height = m_window->GetClientHeight();
+	desc.Depth = 1;
+
+	// Bind the raytracing pipeline
+	m_commandList->m_commandList->SetPipelineState1( m_rtStateObject.Get() );
+	// Dispatch the rays and write to the raytracing output
+	m_commandList->m_commandList->DispatchRays( &desc );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::DispatchRays()
+{
+	// Setup the raytracing task
+	D3D12_DISPATCH_RAYS_DESC desc = {};
+	// The layout of the SBT is as follows: ray generation shader, miss
+	// shaders, hit groups. As described in the CreateShaderBindingTable method,
+	// all SBT entries of a given type have the same size to allow a fixed
+	// stride.
+
+	// The ray generation shaders are always at the beginning of the SBT.
+	uint32_t rayGenerationSectionSizeInBytes =
+		m_sbtHelper.GetRayGenSectionSize();
+	desc.RayGenerationShaderRecord.StartAddress =
+		m_sbtStorage->GetGPUVirtualAddress();
+	desc.RayGenerationShaderRecord.SizeInBytes =
+		rayGenerationSectionSizeInBytes;
+
+	// The miss shaders are in the second SBT section, right after the ray
+	// generation shader. We have one miss shader for the camera rays and one
+	// for the shadow rays, so this section has a size of 2*m_sbtEntrySize. We
+	// also indicate the stride between the two miss shaders, which is the size
+	// of a SBT entry
+	uint32_t missSectionSizeInBytes = m_sbtHelper.GetMissSectionSize();
+	desc.MissShaderTable.StartAddress =
+		m_sbtStorage->GetGPUVirtualAddress() + rayGenerationSectionSizeInBytes;
+	desc.MissShaderTable.SizeInBytes = missSectionSizeInBytes;
+	desc.MissShaderTable.StrideInBytes = m_sbtHelper.GetMissEntrySize();
+
+	// The hit groups section start after the miss shaders. In this sample we
+	// have one 1 hit group for the triangle
+	uint32_t hitGroupsSectionSize = m_sbtHelper.GetHitGroupSectionSize();
+	desc.HitGroupTable.StartAddress = m_sbtStorage->GetGPUVirtualAddress() +
+		rayGenerationSectionSizeInBytes +
+		missSectionSizeInBytes;
+	desc.HitGroupTable.SizeInBytes = hitGroupsSectionSize;
+	desc.HitGroupTable.StrideInBytes = m_sbtHelper.GetHitGroupEntrySize();
+
+	// Dimensions of the image to render, identical to a kernel launch dimension
+	desc.Width = m_window->GetClientWidth();
+	desc.Height = m_window->GetClientHeight();
+	desc.Depth = 1;
+
+	// Bind the raytracing pipeline
+	m_commandList->m_commandList->SetPipelineState1( m_rtStateObject.Get() );
+	// Dispatch the rays and write to the raytracing output
+	m_commandList->m_commandList->DispatchRays( &desc );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

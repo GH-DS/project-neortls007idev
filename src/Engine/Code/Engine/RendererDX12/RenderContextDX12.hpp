@@ -131,6 +131,11 @@ public:
 	void CreateRaytracingOutputBuffer();
 	void CreateShaderResourceHeap();
 	void CreateShaderBindingTable();
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+			
+	void ClearScreenRT();											// Clear Color Ray traced Version
+	void DispatchRays();
 public:
 
 	Window*										m_window									= nullptr;
@@ -203,25 +208,27 @@ public:
 	AccelerationStructureBuffers				m_topLevelASBuffers;										// Storage for the top Level AS
 	
 	std::vector<std::pair<Microsoft::WRL::ComPtr<ID3D12Resource> , DirectX::XMMATRIX>> m_instances;
-	Microsoft::WRL::ComPtr<IDxcBlob> m_rayGenLibrary;
-	Microsoft::WRL::ComPtr<IDxcBlob> m_hitLibrary;
-	Microsoft::WRL::ComPtr<IDxcBlob> m_missLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob>			m_rayGenLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob>			m_hitLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob>			m_missLibrary;
+//	Microsoft::WRL::ComPtr<IDxcBlob>			m_shadowLibrary;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rayGenSignature;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_hitSignature;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_missSignature;
+//	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_shadowSignature;
 
 	// Ray tracing pipeline state
-	Microsoft::WRL::ComPtr<ID3D12StateObject> m_rtStateObject;
+	Microsoft::WRL::ComPtr<ID3D12StateObject>	m_rtStateObject;
 	// Ray tracing pipeline state properties, retaining the shader identifiers
 	// to use in the Shader Binding Table
 	Microsoft::WRL::ComPtr<ID3D12StateObjectProperties> m_rtStateObjectProps;
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_outputResource;
+	Microsoft::WRL::ComPtr<ID3D12Resource>		 m_outputResource;
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvUavHeap;
-//	nv_helpers_dx12::ShaderBindingTableGenerator m_sbtHelper;
+	nv_helpers_dx12::ShaderBindingTableGenerator m_sbtHelper;
 	
-	Microsoft::WRL::ComPtr<ID3D12Resource> m_sbtStorage;	
+	Microsoft::WRL::ComPtr<ID3D12Resource>		 m_sbtStorage;	
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

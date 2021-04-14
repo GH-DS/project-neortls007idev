@@ -20,6 +20,9 @@
     <Filter Include="Data\Materials">
       <UniqueIdentifier>{b9f5ec4c-4805-458f-b477-2b81d7e58d50}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Data\Shaders\DXR">
+      <UniqueIdentifier>{17d57580-afcf-4c3a-ba6d-3965977a8762}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameCommon.cpp">
@@ -56,77 +59,20 @@
     <FxCompile Include="..\..\Run\Data\Shaders\default.hlsl">
       <Filter>Data\Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\InvertColor.hlsl">
-      <Filter>Data\Shaders</Filter>
+    <FxCompile Include="..\..\Run\Data\Shaders\DXR\Common.hlsl">
+      <Filter>Data\Shaders\DXR</Filter>
     </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\Grid.hlsl">
-      <Filter>Data\Shaders</Filter>
+    <FxCompile Include="..\..\Run\Data\Shaders\DXR\Hit.hlsl">
+      <Filter>Data\Shaders\DXR</Filter>
     </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\normalLit.hlsl">
-      <Filter>Data\Shaders</Filter>
+    <FxCompile Include="..\..\Run\Data\Shaders\DXR\Miss.hlsl">
+      <Filter>Data\Shaders\DXR</Filter>
     </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\uvDebugger.hlsl">
-      <Filter>Data\Shaders</Filter>
+    <FxCompile Include="..\..\Run\Data\Shaders\DXR\RayGen.hlsl">
+      <Filter>Data\Shaders\DXR</Filter>
     </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\surfaceNormalLit.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\defaultLitStageStructs.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\ConstantBuffers.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\ShaderMathUtils.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\tangentLit.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\bitangentLit.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\fresnel.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\LightMathUtils.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\triplanarLit.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\triplanarUnlit.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\dissolve.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\fog.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\projection.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\branchlessComparison.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\litDefault.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\imageEffect.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\blur.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\combineImage.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\toneMap.hlsl">
-      <Filter>Data\Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\CubeMap.hlsl">
-      <Filter>Data\Shaders</Filter>
+    <FxCompile Include="..\..\Run\Data\Shaders\DXR\ShadowRay.hlsl">
+      <Filter>Data\Shaders\DXR</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
