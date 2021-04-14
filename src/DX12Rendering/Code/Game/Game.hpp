@@ -16,7 +16,7 @@ public:
 	~Game();
 
 	void Update( float deltaSeconds );
-	void Render() const;
+	void Render();
 	void UpdateFrameTime( float deltaSeconds ) const;
 	void UpdateCameraConstantBufferData() const;
 	void UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint = WHITE ) const;
@@ -29,12 +29,14 @@ public:
 
 	mutable Camera						m_gameCamera;
 	Transform							m_cubeTestTransform;
-	mutable std::vector<Vertex_PCU>		m_cubeMeshVerts;
-	mutable std::vector<uint>			m_cubeMeshIndices;
+	std::vector<Vertex_PCU>				m_cubeMeshVerts;
+	std::vector<uint>					m_cubeMeshIndices;
 	
-	mutable std::vector<Vertex_PCU>		m_modelMeshVerts;
-	mutable std::vector<uint>			m_modelMeshIndices;
+	std::vector<Vertex_PCU>				m_modelMeshVerts;
+	std::vector<uint>					m_modelMeshIndices;
 	Transform							m_modelTestTransform;
+
+	std::vector<Vertex_PCU>				m_triangle;
 
 private:
 	//mutable Camera				m_gameCamera;
