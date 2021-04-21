@@ -59,8 +59,8 @@ Game::~Game()
 
 void Game::InitializeCameras()
 {
-	//m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
-	m_gameCamera.SetOrthoView( 0.5f , 1.f );
+	m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
+	//m_gameCamera.SetOrthoView( 0.5f , 1.f );
 	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
 	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
 }
@@ -113,7 +113,9 @@ void Game::Render()
 		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
  		g_theRenderer->CreateAccelerationStructures();
 		g_theRenderer->CreateRaytracingOutputBuffer();
+		g_theRenderer->CreateCameraBuffer();
 		g_theRenderer->CreateShaderResourceHeap();
+		g_theRenderer->UpdateCameraBuffer();
 		g_theRenderer->CreateShaderBindingTable();
 		g_theRenderer->ClearScreenRT();
 		//g_theRenderer->DispatchRays();

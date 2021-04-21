@@ -1,5 +1,13 @@
 #include "Common.hlsl"
 
+cbuffer camera_constants : register( b0 ) // index 1 is now camera
+{
+    float4x4 VIEW;
+    float4x4 CAMERA_TO_CLIP_TRANSFORM; // PROJECTION MATRIX
+    float4x4 viewI;
+    float4x4 projectionI;
+}
+
 // Raytracing output texture, accessed as a UAV
 RWTexture2D<float4> gOutput : register(u0);
 
@@ -19,10 +27,17 @@ RaytracingAccelerationStructure SceneBVH : register(t0);
   // Define a ray, consisting of origin, direction, and the min-max distance
   // values
   RayDesc ray;
-  ray.Origin = float3(d.x, -d.y, 1);
-  ray.Direction = float3(0, 0, -1);
+  // ray.Origin = float3(d.x, -d.y, 1);
+  // ray.Direction = float3(0, 0, -1);
   ray.TMin = 0;
   ray.TMax = 100000;
+    
+    // #DXR Extra: Perspective Camera
+    float aspectRatio = dims.x / dims.y;
+  // Perspective
+    ray.Origin = mul( viewI , float4( 0 , 0 , 0 , 1 ) );
+    float4 target = mul( projectionI , float4( d.x , -d.y , 1 , 1 ) );
+    ray.Direction = mul( viewI , float4( target.xyz , 0 ) );
 
   // Trace the ray
   TraceRay(

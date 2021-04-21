@@ -136,99 +136,106 @@ public:
 			
 	void ClearScreenRT();											// Clear Color Ray traced Version
 	void DispatchRays();
+
+	void CreateCameraBuffer();
+	void UpdateCameraBuffer();
 public:
 
-	Window*										m_window									= nullptr;
-	ID3D12Device5*								m_device									= nullptr;
-	ID3D12DeviceContext*						m_context									= nullptr;
-	void*										m_debugModule								= nullptr;
-	IDXGIDebug*									m_debug										= nullptr;
-	ID3D12Debug*								m_dx12DebugModule							= nullptr;		
-	ID3D12InfoQueue*							m_infoQueue									= nullptr;
-	IDXGIAdapter4*								m_deviceAdapter								= nullptr;
-	bool										m_isVsyncEnabled							= false;
-	bool										m_hasTearingSupport							= false;
+	Window*														m_window									= nullptr;
+	ID3D12Device5*												m_device									= nullptr;
+	ID3D12DeviceContext*										m_context									= nullptr;
+	void*														m_debugModule								= nullptr;
+	IDXGIDebug*													m_debug										= nullptr;
+	ID3D12Debug*												m_dx12DebugModule							= nullptr;		
+	ID3D12InfoQueue*											m_infoQueue									= nullptr;
+	IDXGIAdapter4*												m_deviceAdapter								= nullptr;
+	bool														m_isVsyncEnabled							= false;
+	bool														m_hasTearingSupport							= false;
 
-	const uint8_t								m_numBackBufferFrames						= 3;
-	uint64_t									m_frameFenceValues[ 3 ]						= {};
-	uint64_t									m_fenceValue								= 0;
+	const uint8_t												m_numBackBufferFrames						= 3;
+	uint64_t													m_frameFenceValues[ 3 ]						= {};
+	uint64_t													m_fenceValue								= 0;
 
-	ID3D12Resource*								t_backBuffers[ 3 ];
-	IDXGISwapChain4*							t_swapchain									= nullptr;
-	DescriptorHeapDX12*							m_RTVDescriptorHeap							= nullptr;
-	UINT										m_RTVDescriptorSize							= 0;
+	ID3D12Resource*												t_backBuffers[ 3 ];
+	IDXGISwapChain4*											t_swapchain									= nullptr;
+	DescriptorHeapDX12*											m_RTVDescriptorHeap							= nullptr;
+	UINT														m_RTVDescriptorSize							= 0;
 
-//	DirectQueueDX12*							m_directCommandQueue						= nullptr;
-	CommandQueueDX12*							m_commandQueue								= nullptr;
-	uint8_t										m_currentBackBufferIndex					= 0;
+//	DirectQueueDX12*											m_directCommandQueue						= nullptr;
+	CommandQueueDX12*											m_commandQueue								= nullptr;
+	uint8_t														m_currentBackBufferIndex					= 0;
 
-	CommandAllocatorDX12*						m_commandAllocators[ 3 ];
-	CommandListDX12*							m_commandList								= nullptr;
-	HANDLE										m_fenceEvent								= nullptr;
+	CommandAllocatorDX12*										m_commandAllocators[ 3 ];
+	CommandListDX12*											m_commandList								= nullptr;
+	HANDLE														m_fenceEvent								= nullptr;
 	
-	ID3D12RootSignature*						m_rootSignature								= nullptr;
-	ID3DBlob*									m_rootSignatureBlob							= nullptr;
-	ID3DBlob*									m_errorBlob									= nullptr;
+	ID3D12RootSignature*										m_rootSignature								= nullptr;
+	ID3DBlob*													m_rootSignatureBlob							= nullptr;
+	ID3DBlob*													m_errorBlob									= nullptr;
 	
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC			m_pipelineStateDesc;
-	ID3D12PipelineState*						m_pipelineState								= nullptr;
-	ShaderDX12*									m_currentShader								= nullptr;
-	ShaderDX12*									m_defaultShader								= nullptr;
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC							m_pipelineStateDesc;
+	ID3D12PipelineState*										m_pipelineState								= nullptr;
+	ShaderDX12*													m_currentShader								= nullptr;
+	ShaderDX12*													m_defaultShader								= nullptr;
 
-	D3D12_VIEWPORT								m_viewPort;
-	D3D12_RECT									m_scisrroRec;
+	D3D12_VIEWPORT												m_viewPort;
+	D3D12_RECT													m_scisrroRec;
 
 	// Vertex buffer for the cube.
-	D3D12_VERTEX_BUFFER_VIEW					m_vertexBufferView							= {};
-	ID3D12Resource*								m_vertexBuffer								= nullptr;
-	ID3D12Resource*								m_vertexBufferUploadHeap					= nullptr;
+	D3D12_VERTEX_BUFFER_VIEW									m_vertexBufferView							= {};
+	ID3D12Resource*												m_vertexBuffer								= nullptr;
+	ID3D12Resource*												m_vertexBufferUploadHeap					= nullptr;
 	// Index buffer for the cube.
-	D3D12_INDEX_BUFFER_VIEW						m_indexBufferView							= {};
-	ID3D12Resource*								m_indexBuffer								= nullptr;
-	ID3D12Resource*								m_indexBufferUploadHeap						= nullptr;
+	D3D12_INDEX_BUFFER_VIEW										m_indexBufferView							= {};
+	ID3D12Resource*												m_indexBuffer								= nullptr;
+	ID3D12Resource*												m_indexBufferUploadHeap						= nullptr;
 	
 	// Rasterizer State
-	D3D12_RASTERIZER_DESC						m_rasterizerStateDesc{};
+	D3D12_RASTERIZER_DESC										m_rasterizerStateDesc{};
 
 	// Depth Stencil State
-	D3D12_DEPTH_STENCIL_DESC					m_depthStencilDesc{};
+	D3D12_DEPTH_STENCIL_DESC									m_depthStencilDesc{};
 	// Depth buffer.
-	ID3D12Resource*								m_depthStencilBuffer						= nullptr;
+	ID3D12Resource*												m_depthStencilBuffer						= nullptr;
 	// Descriptor heap for depth buffer.
-	ID3D12DescriptorHeap*						m_dsvHeap									= nullptr;
+	ID3D12DescriptorHeap*										m_dsvHeap									= nullptr;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 //				DXR
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	// Boolean to switch between Raster and Raytracing mode
-	bool										m_raster									= true;
-	Microsoft::WRL::ComPtr<ID3D12Resource>		m_bottomLevelAS;											// Storage for the bottom Level AS
+	bool														m_raster									= true;
+	Microsoft::WRL::ComPtr<ID3D12Resource>						m_bottomLevelAS;											// Storage for the bottom Level AS
 	
-	nv_helpers_dx12::TopLevelASGenerator		m_topLevelASGenerator;										
-	AccelerationStructureBuffers				m_topLevelASBuffers;										// Storage for the top Level AS
+	nv_helpers_dx12::TopLevelASGenerator						m_topLevelASGenerator;										
+	AccelerationStructureBuffers								m_topLevelASBuffers;										// Storage for the top Level AS
 	
 	std::vector<std::pair<Microsoft::WRL::ComPtr<ID3D12Resource> , DirectX::XMMATRIX>> m_instances;
-	Microsoft::WRL::ComPtr<IDxcBlob>			m_rayGenLibrary;
-	Microsoft::WRL::ComPtr<IDxcBlob>			m_hitLibrary;
-	Microsoft::WRL::ComPtr<IDxcBlob>			m_missLibrary;
-//	Microsoft::WRL::ComPtr<IDxcBlob>			m_shadowLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob>							m_rayGenLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob>							m_hitLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob>							m_missLibrary;
+	Microsoft::WRL::ComPtr<IDxcBlob>							m_shadowLibrary;
 
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rayGenSignature;
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_hitSignature;
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_missSignature;
-//	Microsoft::WRL::ComPtr<ID3D12RootSignature> m_shadowSignature;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature>					m_rayGenSignature;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature>					m_hitSignature;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature>					m_missSignature;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature>					m_shadowSignature;
 
 	// Ray tracing pipeline state
-	Microsoft::WRL::ComPtr<ID3D12StateObject>	m_rtStateObject;
+	Microsoft::WRL::ComPtr<ID3D12StateObject>					m_rtStateObject;
 	// Ray tracing pipeline state properties, retaining the shader identifiers
 	// to use in the Shader Binding Table
-	Microsoft::WRL::ComPtr<ID3D12StateObjectProperties> m_rtStateObjectProps;
-	Microsoft::WRL::ComPtr<ID3D12Resource>		 m_outputResource;
+	Microsoft::WRL::ComPtr<ID3D12StateObjectProperties>			m_rtStateObjectProps;
+	Microsoft::WRL::ComPtr<ID3D12Resource>						m_outputResource;
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_srvUavHeap;
-	nv_helpers_dx12::ShaderBindingTableGenerator m_sbtHelper;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>				m_srvUavHeap;
+	nv_helpers_dx12::ShaderBindingTableGenerator				m_sbtHelper;
 	
-	Microsoft::WRL::ComPtr<ID3D12Resource>		 m_sbtStorage;	
+	Microsoft::WRL::ComPtr<ID3D12Resource>						m_sbtStorage;	
+
+	Microsoft::WRL::ComPtr< ID3D12Resource >					m_cameraBuffer;
+	Microsoft::WRL::ComPtr< ID3D12DescriptorHeap >				m_constHeap;
+	uint32_t													m_cameraBufferSize = 0;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
