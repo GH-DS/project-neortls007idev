@@ -20,7 +20,8 @@ public:
 	void UpdateFrameTime( float deltaSeconds ) const;
 	void UpdateCameraConstantBufferData() const;
 	void UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint = WHITE ) const;
-	void UpdateFromKeyboard();
+	void UpdateFromKeyboard( float deltaSeconds );
+	void CameraPositionUpdateOnInput( float deltaSeconds );
 public:
 	Rgba8 m_clearScreenColor	= Rgba8( 0 , 50 , 100 , 255 );
 	Rgba8 m_clearScreenColorRT	= Rgba8( 154 , 205 , 102 , 255 );
@@ -37,6 +38,13 @@ public:
 	Transform							m_modelTestTransform;
 
 	std::vector<Vertex_PCU>				m_triangle;
+	Vec3								m_cameraPosition = Vec3::ZERO;
+	float								m_pitch = 0.f;
+	float								m_yaw = 0.f;
+
+	float								m_nearZ = GAME_CAM_NEAR_Z;
+	float								m_farZ	= GAME_CAM_FAR_Z;
+
 
 private:
 	//mutable Camera				m_gameCamera;

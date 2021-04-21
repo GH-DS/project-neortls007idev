@@ -139,6 +139,7 @@ public:
 
 	void CreateCameraBuffer();
 	void UpdateCameraBuffer();
+
 public:
 
 	Window*														m_window									= nullptr;

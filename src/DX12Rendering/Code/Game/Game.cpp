@@ -22,7 +22,7 @@ extern TheApp*				g_theApp;
 Game::Game()
 {
 	InitializeCameras();
-	g_theInput->PushCursorSettings( CursorSettings( ABSOLUTE_MODE , MOUSE_IS_UNLOCKED , true ) );
+	g_theInput->PushCursorSettings( CursorSettings( RELATIVE_MODE , MOUSE_IS_WINDOWLOCKED , false ) );
 	m_colorLerpTimer = 0.f;
 
 	m_cubeTestTransform.SetPosition( Vec3( 0.f , 3.f , 90.f ) );
@@ -59,7 +59,7 @@ Game::~Game()
 
 void Game::InitializeCameras()
 {
-	m_gameCamera.SetProjectionPerspective( 60.f , CLIENT_ASPECT , -.1f , -100.f );
+	m_gameCamera.SetProjectionPerspective( GAME_CAM_FOV , CLIENT_ASPECT , -GAME_CAM_NEAR_Z , -GAME_CAM_FAR_Z );
 	//m_gameCamera.SetOrthoView( 0.5f , 1.f );
 	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
 	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
@@ -79,7 +79,7 @@ void Game::Update( float deltaSeconds )
 //	m_triangle[ 0 ].m_position = Vec3( 0.f , 0.5f + SinDegrees( 50.f * time ) , 0.0f );
 	//m_cubeTestTransform.m_yaw += deltaSeconds * 5.f;
 	//m_modelTestTransform.m_yaw += deltaSeconds * 5.f;
-	UpdateFromKeyboard();
+	UpdateFromKeyboard( deltaSeconds );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -90,8 +90,7 @@ void Game::Render()
 	if( g_theRenderer->m_raster )
 	{
 		g_theRenderer->ClearScreen( m_clearScreenColor );
-		//g_theRenderer->TestDraw();
-
+		
 		UpdateCameraConstantBufferData();
 		UpdateFrameTime( m_framTime );
 		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
@@ -159,12 +158,75 @@ void Game::UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint /*= WHITE */ ) cons
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
-void Game::UpdateFromKeyboard()
+void Game::UpdateFromKeyboard( float deltaSeconds )
 {
 	if ( g_theInput->WasKeyJustPressed( KEY_SPACE ) )
 	{
 		g_theRenderer->m_raster = !g_theRenderer->m_raster;
 	}
+
+	CameraPositionUpdateOnInput( deltaSeconds );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void Game::CameraPositionUpdateOnInput( float deltaSeconds )
+{
+	Vec3 rotation = Vec3::ZERO;
+
+	Mat44 cameraTransform	= m_gameCamera.GetCameraTransform().GetAsMatrix();
+	Vec3 forwardVector		= -cameraTransform.GetKBasis3D();
+	Vec3 rightVector		= cameraTransform.GetIBasis3D();
+	Vec3 UpVector			= Vec3::UNIT_VECTOR_ALONG_J_BASIS;
+
+	float speed = 0.25f;
+
+	if ( g_theInput->IsKeyHeldDown( KEY_SHIFT ) )
+	{
+		speed = 1.f;
+	}
+
+	if ( g_theInput->IsKeyHeldDown( 'A' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() - rightVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'D' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() + rightVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'W' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() + forwardVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'S' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() - forwardVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'Q' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() - UpVector * speed * deltaSeconds );
+	}
+	if ( g_theInput->IsKeyHeldDown( 'E' ) )
+	{
+		m_gameCamera.SetPosition( m_gameCamera.GetPosition() + UpVector * speed * deltaSeconds );
+	}
+
+	if ( g_theInput->WasKeyJustPressed( 'O' ) )
+	{
+		m_gameCamera.SetPosition( Vec3::ZERO );
+		m_yaw = 0.f;
+		m_pitch = 0.f;
+	}
+
+	Vec2 mousePos = g_theInput->GetRelativeMovement();
+
+	m_pitch -= mousePos.y * speed * deltaSeconds;
+	m_yaw -= mousePos.x * speed * deltaSeconds;
+
+	m_pitch = Clamp( m_pitch , -90.f , 90.f );
+
+	m_gameCamera.SetPitchYawRollRotation( m_pitch , m_yaw , 0.f );
+	m_gameCamera.ConstructCameraViewFrustum();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
