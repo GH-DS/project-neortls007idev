@@ -12,6 +12,7 @@ class Game
 public:
 	Game();
 	void InitializeCameras();
+	void InitializePlane();
 
 	~Game();
 
@@ -19,6 +20,7 @@ public:
 	void Render();
 	void UpdateFrameTime( float deltaSeconds ) const;
 	void UpdateCameraConstantBufferData() const;
+	void UpdateCameraConstantBufferDataRTX() const;
 	void UpdateModelMatrix( Mat44 modelMatrix , Rgba8 tint = WHITE ) const;
 	void UpdateFromKeyboard( float deltaSeconds );
 	void CameraPositionUpdateOnInput( float deltaSeconds );
@@ -38,6 +40,7 @@ public:
 	Transform							m_modelTestTransform;
 
 	std::vector<Vertex_PCU>				m_triangle;
+	std::vector<Vertex_PCU>				m_plane;
 	Vec3								m_cameraPosition = Vec3::ZERO;
 	float								m_pitch = 0.f;
 	float								m_yaw = 0.f;

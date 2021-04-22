@@ -31,7 +31,7 @@ void ClosestHit(inout HitInfo payload, Attributes attrib)
                     BTriVertex[vertId + 1].color * barycentrics.y +
                     BTriVertex[vertId + 2].color * barycentrics.z;
 
-	payload.colorAndDistance = float4(hitColor, RayTCurrent());
+  //payload.colorAndDistance = float4(hitColor, RayTCurrent());
   payload.colorAndDistance = float4( 0.f , 1.f , 0.f , RayTCurrent() );
 }
 
@@ -101,7 +101,7 @@ void PlaneClosestHit( inout HitInfo payload , Attributes attrib )
 
     float3 barycentrics =
       float3( 1.f - attrib.bary.x - attrib.bary.y , attrib.bary.x , attrib.bary.y );
-    //float4 hitColor = float4( float3( 0.7 , 0.7 , 0.3 ) * factor , RayTCurrent() );
-    float4 hitColor = float4( 0.f , 0.f , 1.f , RayTCurrent() );
+    float4 hitColor = float4( float3( 0.7 , 0.7 , 0.3 ) * factor , RayTCurrent() );
+   // float4 hitColor = float4( 1.f , 0.f , 1.f , 1.f );
     payload.colorAndDistance = float4( hitColor );
 }

@@ -1,6 +1,6 @@
 #include "Common.hlsl"
 
-cbuffer camera_constants : register( b0 ) // index 1 is now camera
+cbuffer camera_constants : register( b0 ) // index 0 is now camera
 {
     float4x4 VIEW;
     float4x4 CAMERA_TO_CLIP_TRANSFORM; // PROJECTION MATRIX

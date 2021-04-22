@@ -45,7 +45,9 @@ Game::Game()
 	m_triangle.emplace_back( Vertex_PCU( Vec3( 0.f , 0.5f , 0.0f ) , GREEN , Vec2::ZERO ) );
 	m_triangle.emplace_back( Vertex_PCU( Vec3( -0.25f , -0.25f , 0.0f ) , BLUE , Vec2::ONE ) );
 	m_triangle.emplace_back( Vertex_PCU( Vec3( 0.25f , -0.25f , 0.0f ) , RED , Vec2( 0.5f , 1.f ) ) );
-
+	
+	InitializePlane();
+	g_theRenderer->m_raster = false;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -61,8 +63,22 @@ void Game::InitializeCameras()
 {
 	m_gameCamera.SetProjectionPerspective( GAME_CAM_FOV , CLIENT_ASPECT , -GAME_CAM_NEAR_Z , -GAME_CAM_FAR_Z );
 	//m_gameCamera.SetOrthoView( 0.5f , 1.f );
-	//m_gameCamera.SetPosition( Vec3( 0.f , 0.f , 100.f ) );
+	m_gameCamera.SetPosition( Vec3( 0.f , 0.f , -5.f ) );
+	m_gameCamera.SetPitchYawRollRotation( 0.f , 180.f , 0.f );
+	m_yaw = 180.f;
 	m_gameCamera.SetClearMode( CLEAR_COLOR_BIT | CLEAR_DEPTH_BIT | CLEAR_STENCIL_BIT , BLACK , 1.f , 0 );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void Game::InitializePlane()
+{
+	m_plane.emplace_back( Vertex_PCU( Vec3( -15.f , -8.f , 15.f ) , WHITE , Vec2::ZERO ) );
+	m_plane.emplace_back( Vertex_PCU( Vec3(  15.f , -8.0f , 15.f ) , WHITE , Vec2::ZERO ) );
+	m_plane.emplace_back( Vertex_PCU( Vec3( -15.0f , -8.f , -15.f ) , WHITE , Vec2::ZERO ) );
+	m_plane.emplace_back( Vertex_PCU( Vec3( 15.f , -8.f , 15.f ) , WHITE , Vec2::ZERO ) );
+	m_plane.emplace_back( Vertex_PCU( Vec3( 15.0f , -8.f , -15.f ) , WHITE , Vec2::ZERO ) );
+	m_plane.emplace_back( Vertex_PCU( Vec3( -15.f , -8.f , -15.f ) , WHITE , Vec2::ZERO ) );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -97,6 +113,9 @@ void Game::Render()
 		//
 		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
 		g_theRenderer->DrawVertexArray( m_triangle );
+		g_theRenderer->CreateVertexBufferForVertexArray( m_plane );
+		g_theRenderer->DrawVertexArray( m_plane );
+		
 		//g_theRenderer->CreateVertexBufferForVertexArray( m_cubeMeshVerts );
 		//g_theRenderer->CreateIndexBufferForIndexArray( m_cubeMeshIndices );
 		//UpdateModelMatrix( m_cubeTestTransform.GetAsMatrix() );
@@ -104,20 +123,22 @@ void Game::Render()
 	}
 	else
 	{
-		//
+
 // 		UpdateCameraConstantBufferData();
 // 		UpdateFrameTime( m_framTime );
 //		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
 		g_theRenderer->ClearScreen( m_clearScreenColorRT );
 		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
+		g_theRenderer->CreatePlaneVertexBuffer();
  		g_theRenderer->CreateAccelerationStructures();
 		g_theRenderer->CreateRaytracingOutputBuffer();
 		g_theRenderer->CreateCameraBuffer();
 		g_theRenderer->CreateShaderResourceHeap();
-		g_theRenderer->UpdateCameraBuffer();
+		g_theRenderer->UpdateCameraBuffer( &m_gameCamera );
 		g_theRenderer->CreateShaderBindingTable();
+		
 		g_theRenderer->ClearScreenRT();
-		//g_theRenderer->DispatchRays();
+//		g_theRenderer->DrawTestPlane();
 	}
 }
 
@@ -179,11 +200,11 @@ void Game::CameraPositionUpdateOnInput( float deltaSeconds )
 	Vec3 rightVector		= cameraTransform.GetIBasis3D();
 	Vec3 UpVector			= Vec3::UNIT_VECTOR_ALONG_J_BASIS;
 
-	float speed = 0.25f;
+	float speed = 1.f;
 
 	if ( g_theInput->IsKeyHeldDown( KEY_SHIFT ) )
 	{
-		speed = 1.f;
+		speed = 4.f;
 	}
 
 	if ( g_theInput->IsKeyHeldDown( 'A' ) )

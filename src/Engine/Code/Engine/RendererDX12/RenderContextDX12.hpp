@@ -31,6 +31,7 @@ class	DescriptorHeapDX12;
 class	CommandAllocatorDX12;
 class	CommandListDX12;
 class	ShaderDX12;
+class Camera;
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -99,6 +100,7 @@ public:
 	void					CreateIndexBufferForIndexArray( std::vector<uint>& indices );
 	void					CreateIndexBufferForIndexArray( uint numIndices , uint* indices );
 	void					TestDraw();
+	void					DrawTestPlane();
 	void					DrawVertexArray( std::vector<Vertex_PCU>& verts );
 	void					DrawIndexedVertexArray( std::vector<Vertex_PCU>& verts , std::vector<uint>& indices );
 	void					DrawIndexedVertexArray( uint numVerts , uint numIndices );
@@ -138,7 +140,8 @@ public:
 	void DispatchRays();
 
 	void CreateCameraBuffer();
-	void UpdateCameraBuffer();
+	void UpdateCameraBuffer( Camera* camera );
+	void CreatePlaneVertexBuffer();
 
 public:
 
@@ -237,6 +240,10 @@ public:
 	Microsoft::WRL::ComPtr< ID3D12Resource >					m_cameraBuffer;
 	Microsoft::WRL::ComPtr< ID3D12DescriptorHeap >				m_constHeap;
 	uint32_t													m_cameraBufferSize = 0;
+
+	// Base plane
+	Microsoft::WRL::ComPtr< ID3D12Resource >					m_planeBuffer;
+	D3D12_VERTEX_BUFFER_VIEW									m_planeBufferView;
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
