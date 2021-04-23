@@ -25,22 +25,8 @@ Game::Game()
 	g_theInput->PushCursorSettings( CursorSettings( RELATIVE_MODE , MOUSE_IS_WINDOWLOCKED , false ) );
 	m_colorLerpTimer = 0.f;
 
-	m_cubeTestTransform.SetPosition( Vec3( 0.f , 3.f , 90.f ) );
-	AABB3 box( Vec3( -0.5f , -0.5f , -0.5f ) , Vec3( 0.5f , 0.5f , 0.5f ) );
-	Rgba8 tint( 255 , 255 , 255 , 255 );
+	InitializeModelMeshesAndTransforms();
 
-	AddCubeVerts( m_cubeMeshVerts , nullptr );
-	uint* indices = GetCubeIndices();
-	for( int index = 0 ; index < 36 ; index++ )
-	{
-		m_cubeMeshIndices.push_back( indices[ index ] );
-	}
-
-	std::vector<VertexMaster> modelverts;
-	MeshBuilderOptions buildMesh;
-	LoadObjFileIntoVertexBuffer( modelverts , m_modelMeshIndices , buildMesh , "Data/Models/scifiFighter/mesh.obj" );
-	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts , modelverts );
-	m_modelTestTransform.SetPosition( Vec3( 0.f , 0.f , 75.f ) );
 
 	m_triangle.emplace_back( Vertex_PCU( Vec3( 0.f , 0.5f , 0.0f ) , GREEN , Vec2::ZERO ) );
 	m_triangle.emplace_back( Vertex_PCU( Vec3( -0.25f , -0.25f , 0.0f ) , BLUE , Vec2::ONE ) );
@@ -48,6 +34,59 @@ Game::Game()
 	
 	InitializePlane();
 	g_theRenderer->m_raster = false;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void Game::InitializeModelMeshesAndTransforms()
+{
+	std::vector<VertexMaster> modelverts;
+	std::vector<uint> modelIndices;
+	MeshBuilderOptions buildMesh;
+	buildMesh.ignoreUVs = true;
+
+	LoadObjFileIntoVertexBuffer( modelverts , modelIndices , buildMesh , "Data/Models/Gems/Crystal_006.obj" );
+	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts[ GM_CRYSTAL1 ] , modelverts );
+	m_modelTransforms[ GM_CRYSTAL1 ].SetPosition( Vec3( -15.f , -3.f , 15.f ) );
+	m_modelTintColors[ GM_CRYSTAL1 ] = HALF_ALPHA_CYAN;
+	modelverts.clear();
+	modelIndices.clear();
+
+
+	LoadObjFileIntoVertexBuffer( modelverts , modelIndices , buildMesh , "Data/Models/Gems/Crystal_007.obj" );
+	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts[ GM_CRYSTAL2 ] , modelverts );
+	m_modelTransforms[ GM_CRYSTAL2 ].SetPosition( Vec3( 15.f , -3.0f , 15.f ) );
+	m_modelTintColors[ GM_CRYSTAL2 ] = HALF_ALPHA_PINK;
+	modelverts.clear();
+	modelIndices.clear();
+
+	LoadObjFileIntoVertexBuffer( modelverts , modelIndices , buildMesh , "Data/Models/Gems/Gem_001.obj" );
+	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts[ GM_GEM ] , modelverts );
+	m_modelTransforms[ GM_GEM ].SetPosition( Vec3( -15.0f , -3.f , -15.f ) );
+	m_modelTintColors[ GM_GEM ] = HALF_ALPHA_WHITE;
+	modelverts.clear();
+	modelIndices.clear();
+
+	LoadObjFileIntoVertexBuffer( modelverts , modelIndices , buildMesh , "Data/Models/Gems/Diamond_002.obj" );
+	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts[ GM_DIAMOND ] , modelverts );
+	m_modelTransforms[ GM_DIAMOND ].SetPosition( Vec3( 15.0f , -3.f , -15.f ) );
+	m_modelTintColors[ GM_DIAMOND ] = HALF_ALPHA_BLUE;
+	modelverts.clear();
+	modelIndices.clear();
+
+	LoadObjFileIntoVertexBuffer( modelverts , modelIndices , buildMesh , "Data/Models/Gems/Hexagon_Gem_002.obj" );
+	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts[ GM_HEX ] , modelverts );
+	m_modelTransforms[ GM_HEX ].SetPosition( Vec3( 0.f , -3.f , 0.f ) );
+	m_modelTintColors[ GM_HEX ] = HALF_ALPHA_RED;
+	modelverts.clear();
+	modelIndices.clear();
+
+	LoadObjFileIntoVertexBuffer( modelverts , modelIndices , buildMesh , "Data/Models/Gems/Octagonal_Gem_001.obj" );
+	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts[ GM_OCT ] , modelverts );
+	m_modelTransforms[ GM_OCT ].SetPosition( Vec3( 0.f , 3.f , 0.f ) );
+	m_modelTintColors[ GM_HEX ] = HALF_ALPHA_GREEN;
+	modelverts.clear();
+	modelIndices.clear();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

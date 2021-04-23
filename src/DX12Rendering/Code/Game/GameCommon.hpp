@@ -27,5 +27,20 @@ constexpr float	GAME_CAM_FOV											= 60.0f;
 
 enum eGameModels
 {
-	NUM_MODELS;
+	GM_CRYSTAL1 ,
+	GM_CRYSTAL2 ,
+	GM_GEM ,
+	GM_DIAMOND ,
+	GM_OCT ,
+	GM_HEX ,
+
+	NUM_MODELS
+};
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
+struct TransparencyBlend
+{
+	float distanceSq = 0.f;
+	int	  modelindex = -1;
 };
