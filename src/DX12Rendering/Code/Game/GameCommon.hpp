@@ -39,8 +39,15 @@ enum eGameModels
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 	
-struct TransparencyBlend
+struct TransparencyRenderOrder
 {
 	float distanceSq = 0.f;
 	int	  modelindex = -1;
 };
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+	
+struct
+{
+	bool operator()( TransparencyRenderOrder a , TransparencyRenderOrder b ) const { return a.distanceSq > b.distanceSq; }
+} customGreaterTransparencyRenderOrder;

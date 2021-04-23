@@ -84,7 +84,7 @@ void Game::InitializeModelMeshesAndTransforms()
 	LoadObjFileIntoVertexBuffer( modelverts , modelIndices , buildMesh , "Data/Models/Gems/Octagonal_Gem_001.obj" );
 	VertexMaster::ConvertVertexMasterToVertexPCU( m_modelMeshVerts[ GM_OCT ] , modelverts );
 	m_modelTransforms[ GM_OCT ].SetPosition( Vec3( 0.f , 3.f , 0.f ) );
-	m_modelTintColors[ GM_HEX ] = HALF_ALPHA_GREEN;
+	m_modelTintColors[ GM_OCT ] = HALF_ALPHA_GREEN;
 	modelverts.clear();
 	modelIndices.clear();
 }
@@ -135,6 +135,7 @@ void Game::Update( float deltaSeconds )
 	//m_cubeTestTransform.m_yaw += deltaSeconds * 5.f;
 	//m_modelTestTransform.m_yaw += deltaSeconds * 5.f;
 	UpdateFromKeyboard( deltaSeconds );
+	UpdateRenderingOrder();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -155,9 +156,11 @@ void Game::Render()
 		
 		for( int index = 0 ; index < NUM_MODELS ; index++ )
 		{
-			g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts[ index ] );
-			UpdateModelMatrix( m_modelTransforms[ index ].GetAsMatrix() , m_modelTintColors[ index ] );
-			g_theRenderer->DrawVertexArray( m_modelMeshVerts[ index ] );
+			int modelIndex = m_renderingOrder[ index ].modelindex;
+
+			g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts[ modelIndex ] );
+			UpdateModelMatrix( m_modelTransforms[ modelIndex ].GetAsMatrix() , m_modelTintColors[ modelIndex ] );
+			g_theRenderer->DrawVertexArray( m_modelMeshVerts[ modelIndex ] );
 		}
 	}
 	else
@@ -282,6 +285,25 @@ void Game::CameraPositionUpdateOnInput( float deltaSeconds )
 
 	m_gameCamera.SetPitchYawRollRotation( m_pitch , m_yaw , 0.f );
 	m_gameCamera.ConstructCameraViewFrustum();
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void Game::UpdateRenderingOrder()
+{
+	m_renderingOrder.clear();
+
+	Vec3 camPos = m_gameCamera.GetPosition();
+	TransparencyRenderOrder modelRO;
+
+	for( int index = 0 ; index < NUM_MODELS ; index++ )
+	{
+		modelRO.distanceSq = ( m_modelTransforms[ index ].GetPostion() - camPos ).GetLengthSquared();
+		modelRO.modelindex = index;
+		m_renderingOrder.emplace_back( modelRO );
+	}
+
+	std::sort( m_renderingOrder.begin() , m_renderingOrder.end() , customGreaterTransparencyRenderOrder );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
