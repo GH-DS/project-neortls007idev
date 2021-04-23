@@ -599,11 +599,14 @@ void LoadObjFileIntoVertexBuffer( std::vector<VertexMaster>& vertexBuffer , std:
 			v2.m_normal = normals[ ( iForNormals[ i ][ 1 ] ) - 1 ];
 			v3.m_normal = normals[ ( iForNormals[ i ][ 2 ] ) - 1 ];
 			v4.m_normal = normals[ ( iForNormals[ i ][ 3 ] ) - 1 ];
-
-			v1.m_uvTexCoords = uvs[ ( iForTex[ i ][ 0 ] ) - 1 ];
-			v2.m_uvTexCoords = uvs[ ( iForTex[ i ][ 1 ] ) - 1 ];
-			v3.m_uvTexCoords = uvs[ ( iForTex[ i ][ 2 ] ) - 1 ];
-			v4.m_uvTexCoords = uvs[ ( iForTex[ i ][ 3 ] ) - 1 ];
+			
+			if( !options.ignoreUVs )
+			{
+				v1.m_uvTexCoords = uvs[ ( iForTex[ i ][ 0 ] ) - 1 ];
+				v2.m_uvTexCoords = uvs[ ( iForTex[ i ][ 1 ] ) - 1 ];
+				v3.m_uvTexCoords = uvs[ ( iForTex[ i ][ 2 ] ) - 1 ];
+				v4.m_uvTexCoords = uvs[ ( iForTex[ i ][ 3 ] ) - 1 ];
+			}
 
 			if ( iForNormals.size() > 0 )
 			{
@@ -699,9 +702,12 @@ void LoadObjFileIntoVertexBuffer( std::vector<VertexMaster>& vertexBuffer , std:
 			v2.m_normal = normals[ ( iForNormals[ i ][ 1 ] ) - 1 ];
 			v3.m_normal = normals[ ( iForNormals[ i ][ 2 ] ) - 1 ];
 
-			v1.m_uvTexCoords = uvs[ ( iForTex[ i ][ 0 ] ) - 1 ];
-			v2.m_uvTexCoords = uvs[ ( iForTex[ i ][ 1 ] ) - 1 ];
-			v3.m_uvTexCoords = uvs[ ( iForTex[ i ][ 2 ] ) - 1 ];
+			if ( !options.ignoreUVs )
+			{
+				v1.m_uvTexCoords = uvs[ ( iForTex[ i ][ 0 ] ) - 1 ];
+				v2.m_uvTexCoords = uvs[ ( iForTex[ i ][ 1 ] ) - 1 ];
+				v3.m_uvTexCoords = uvs[ ( iForTex[ i ][ 2 ] ) - 1 ];
+			}
 
 			if ( iForNormals.size() > 0 )
 			{

@@ -66,6 +66,7 @@
 
 #include "ThirdParty/DXRHelper/RaytracingPipelineGenerator.h"
 #include "ThirdParty/DXRHelper/RootSignatureGenerator.h"
+#include "../Renderer/Camera.hpp"
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 		
@@ -153,19 +154,20 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	m_defaultShader->CreateFromFile( this , "Data/Shaders/default.hlsl" );
 
 	m_currentShader = m_defaultShader;
-
+	
 	// pso description 
 	D3D12_BLEND_DESC blendDesc{};
 	blendDesc.AlphaToCoverageEnable = FALSE;
 	blendDesc.IndependentBlendEnable = FALSE;
-	blendDesc.RenderTarget[ 0 ].BlendEnable = FALSE;
+	blendDesc.RenderTarget[ 0 ].BlendEnable = true;
 	blendDesc.RenderTarget[ 0 ].LogicOpEnable = FALSE;
-	blendDesc.RenderTarget[ 0 ].SrcBlend = D3D12_BLEND_ONE;
-	blendDesc.RenderTarget[ 0 ].DestBlend = D3D12_BLEND_ZERO;
 	blendDesc.RenderTarget[ 0 ].BlendOp = D3D12_BLEND_OP_ADD;
+	blendDesc.RenderTarget[ 0 ].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+	blendDesc.RenderTarget[ 0 ].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+
+	blendDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 	blendDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D12_BLEND_ONE;
 	blendDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D12_BLEND_ZERO;
-	blendDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D12_BLEND_OP_ADD;
 	blendDesc.RenderTarget[ 0 ].LogicOp = D3D12_LOGIC_OP_NOOP;
 	blendDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 
@@ -257,8 +259,9 @@ HRESULT RenderContextDX12::Startup( Window* window )
 	CheckRaytracingSupport();
 	//g_theRenderer->CreateRaytracingPipeline();
 	CreateRaytracingPipeline();
-	m_raster = false;
+
 	return resourceInit;
+
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1135,6 +1138,16 @@ void RenderContextDX12::TestDraw()
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
 
+void RenderContextDX12::DrawTestPlane()
+{
+	// #DXR Extra: Per-Instance Data
+	// In a way similar to triangle rendering, rasterize the plane
+	m_commandList->m_commandList->IASetVertexBuffers( 0 , 1 , &m_planeBufferView );
+	m_commandList->m_commandList->DrawInstanced( 6 , 1 , 0 , 0 );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
 void RenderContextDX12::DrawVertexArray( std::vector<Vertex_PCU>& verts )
 {
 	// set the vertex buffer (using the vertex buffer view)
@@ -1199,7 +1212,7 @@ AccelerationStructureBuffers RenderContextDX12::CreateBottomLevelAS( std::vector
 	// buffers. It size is also dependent on the scene complexity.
 	UINT64 resultSizeInBytes = 0;
 
-	bottomLevelAS.ComputeASBufferSizes( m_device , false , &scratchSizeInBytes ,
+	bottomLevelAS.ComputeASBufferSizes( m_device , true , &scratchSizeInBytes ,
 		&resultSizeInBytes );
 
 	// Once the sizes are obtained, the application is responsible for allocating
@@ -1234,7 +1247,7 @@ void RenderContextDX12::CreateTopLevelAS( const std::vector<std::pair<Microsoft:
 	for (size_t i = 0; i < instances.size(); i++) {
 	  m_topLevelASGenerator.AddInstance(instances[i].first.Get(),
 	                                    instances[i].second, static_cast<UINT>(i),
-	                                    static_cast<UINT>(0));
+	                                    static_cast<UINT>( i * 2 ));
 	}
 
 	// As for the bottom-level AS, the building the AS requires some scratch space
@@ -1288,8 +1301,18 @@ void RenderContextDX12::CreateAccelerationStructures()
 
 	DirectX::XMMATRIX XM_IDENTITY( &indentityValues[0] );
 
+	AccelerationStructureBuffers planeBottomLevelBuffers =
+		CreateBottomLevelAS( { {m_planeBuffer.Get(), 6} } );
+
+	m_instances = { {bottomLevelBuffers.pResult, XMMatrixIdentity()},
+					{bottomLevelBuffers.pResult, XMMatrixTranslation( .6f, 0, 0 )},
+					{bottomLevelBuffers.pResult, XMMatrixTranslation( -.6f, 0, 0 )},
+		// #DXR Extra: Per-Instance Data
+		{planeBottomLevelBuffers.pResult, XMMatrixTranslation( 0, 0, 0 )} };
+
 	// Just one instance for now
-	m_instances = { {bottomLevelBuffers.pResult, XM_IDENTITY } };
+	//m_instances = { {bottomLevelBuffers.pResult, XM_IDENTITY } };
+
 	CreateTopLevelAS( m_instances );
 	// Flush the command list and wait for it to finish
 	m_commandList->m_commandList->Close();
@@ -1322,9 +1345,14 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RenderContextDX12::CreateRayGenSigna
 		{ {0 /*u0*/, 1 /*1 descriptor */, 0 /*use the implicit register space 0*/,
 		  D3D12_DESCRIPTOR_RANGE_TYPE_UAV /* UAV representing the output buffer*/,
 		  0 /*heap slot where the UAV is defined*/},
+
 		 {0 /*t0*/, 1, 0,
 		  D3D12_DESCRIPTOR_RANGE_TYPE_SRV /*Top-level acceleration structure*/,
-		  1} } );
+		  1},
+
+		 {0 /*b0*/, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_CBV /*Camera parameters*/, 2} 
+
+		} );
 
 	return rsc.Generate( m_device , true );
 }
@@ -1343,6 +1371,13 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RenderContextDX12::CreateHitSignatur
 {
 	nv_helpers_dx12::RootSignatureGenerator rsc;
 	rsc.AddRootParameter( D3D12_ROOT_PARAMETER_TYPE_SRV );
+	
+	// #DXR Extra - Another ray type
+	// Add a single range pointing to the TLAS in the heap
+	rsc.AddHeapRangesParameter( {
+	  { 2 /*t2*/, 1, 0, D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1 /*2nd slot of the heap*/ },
+		} );
+
 	return rsc.Generate( m_device , true );
 }
 
@@ -1369,7 +1404,10 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	pipeline.AddLibrary( m_rayGenLibrary.Get() , { L"RayGen" } );
 	pipeline.AddLibrary( m_missLibrary.Get() , { L"Miss" } );
 	
-	pipeline.AddLibrary( m_hitLibrary.Get() , { L"ClosestHit" } );
+	//pipeline.AddLibrary( m_hitLibrary.Get() , { L"ClosestHit" } );
+	
+	// #DXR Extra: Per-Instance Data
+	pipeline.AddLibrary( m_hitLibrary.Get() , { L"ClosestHit", L"PlaneClosestHit" } );
 
 	// To be used, each DX12 shader needs a root signature defining which
 	// parameters and buffers will be accessed.
@@ -1377,9 +1415,9 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	m_missSignature = CreateMissSignature();
 	m_hitSignature = CreateHitSignature();
 
-// 	m_shadowLibrary = nv_helpers_dx12::CompileShaderLibrary( L"Data/Shaders/DXR/ShadowRay.hlsl" );
-// 	pipeline.AddLibrary( m_shadowLibrary.Get() , { L"ShadowClosestHit", L"ShadowMiss" } );
-// 	m_shadowSignature = CreateMissSignature();
+ 	m_shadowLibrary = nv_helpers_dx12::CompileShaderLibrary( L"Data/Shaders/DXR/ShadowRay.hlsl" );
+ 	pipeline.AddLibrary( m_shadowLibrary.Get() , { L"ShadowClosestHit", L"ShadowMiss" } );
+ 	m_shadowSignature = CreateHitSignature();
 	
 	// 3 different shaders can be invoked to obtain an intersection: an
 	// intersection shader is called
@@ -1400,9 +1438,11 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	// colors
 	pipeline.AddHitGroup( L"HitGroup" , L"ClosestHit" );
 
+	pipeline.AddHitGroup( L"PlaneHitGroup" , L"PlaneClosestHit" );
+
 	// #DXR Extra - Another ray type
 	// Hit group for all geometry when hit by a shadow ray
-//	pipeline.AddHitGroup( L"ShadowHitGroup" , L"ShadowClosestHit" );
+	pipeline.AddHitGroup( L"ShadowHitGroup" , L"ShadowClosestHit" );
 	
 	// The following section associates the root signature to each shader. Note
 	// that we can explicitly show that some shaders share the same root signature
@@ -1410,13 +1450,14 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	// to as hit groups, meaning that the underlying intersection, any-hit and
 	// closest-hit shaders share the same root signature.
 	pipeline.AddRootSignatureAssociation( m_rayGenSignature.Get() , { L"RayGen" } );
-	pipeline.AddRootSignatureAssociation( m_missSignature.Get() , { L"Miss" } );
-	pipeline.AddRootSignatureAssociation( m_hitSignature.Get() , { L"HitGroup" } );
+	//pipeline.AddRootSignatureAssociation( m_missSignature.Get() , { L"Miss" } );
+	//pipeline.AddRootSignatureAssociation( m_hitSignature.Get() , { L"HitGroup" } );
+	pipeline.AddRootSignatureAssociation( m_hitSignature.Get() , { L"HitGroup", L"PlaneHitGroup" } );
 
 	// #DXR Extra - Another ray type
-//	pipeline.AddRootSignatureAssociation( m_shadowSignature.Get() , { L"ShadowHitGroup" } );
+	pipeline.AddRootSignatureAssociation( m_shadowSignature.Get() , { L"ShadowHitGroup" } );
 	// #DXR Extra - Another ray type
-//	pipeline.AddRootSignatureAssociation( m_missSignature.Get() , { L"Miss", L"ShadowMiss" } );
+	pipeline.AddRootSignatureAssociation( m_missSignature.Get() , { L"Miss", L"ShadowMiss" } );
 	
 	// The payload size defines the maximum size of the data carried by the rays,
 	// ie. the the data
@@ -1436,7 +1477,7 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	// then requires a trace depth of 1. Note that this recursion depth should be
 	// kept to a minimum for best performance. Path tracing algorithms can be
 	// easily flattened into a simple loop in the ray generation.
-	pipeline.SetMaxRecursionDepth( 1 );
+	pipeline.SetMaxRecursionDepth( 2 );
 
 	// Compile the pipeline for execution on the GPU
 	m_rtStateObject = pipeline.Generate();
@@ -1475,10 +1516,11 @@ void RenderContextDX12::CreateRaytracingOutputBuffer()
 
 void RenderContextDX12::CreateShaderResourceHeap()
 {
-	// Create a SRV/UAV/CBV descriptor heap. We need 2 entries - 1 UAV for the
- // raytracing output and 1 SRV for the TLAS
+	// #DXR Extra: Perspective Camera
+	// Create a SRV/UAV/CBV descriptor heap. We need 3 entries - 1 SRV for the TLAS, 1 UAV for the
+	// raytracing output and 1 CBV for the camera matrices
 	m_srvUavHeap = nv_helpers_dx12::CreateDescriptorHeap(
-		m_device , 2 , D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV , true );
+		m_device , 3 , D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV , true );
 
 	// Get a handle to the heap memory on the CPU side, to be able to write the
 	// descriptors directly
@@ -1505,6 +1547,17 @@ void RenderContextDX12::CreateShaderResourceHeap()
 		m_topLevelASBuffers.pResult->GetGPUVirtualAddress();
 	// Write the acceleration structure view in the heap
 	m_device->CreateShaderResourceView( nullptr , &srvDesc , srvHandle );
+
+	// #DXR Extra: Perspective Camera
+	// Add the constant buffer for the camera after the TLAS
+	srvHandle.ptr +=
+		m_device->GetDescriptorHandleIncrementSize( D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV );
+
+	// Describe and create a constant buffer view for the camera
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = m_cameraBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = m_cameraBufferSize;
+	m_device->CreateConstantBufferView( &cbvDesc , srvHandle );
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1532,17 +1585,29 @@ void RenderContextDX12::CreateShaderBindingTable()
 	// The miss and hit shaders do not access any external resources: instead they
 	// communicate their results through the ray payload
 	m_sbtHelper.AddMissProgram( L"Miss" , {} );
-	m_sbtHelper.AddMissProgram( L"Miss" , {} );
+//	m_sbtHelper.AddMissProgram( L"Miss" , {} );
 
 	// #DXR Extra - Another ray type
-//	m_sbtHelper.AddMissProgram( L"ShadowMiss" , {} );
-	
+	m_sbtHelper.AddMissProgram( L"ShadowMiss" , {} );
+		
 	// Adding the triangle hit shader
 	m_sbtHelper.AddHitGroup( L"HitGroup" ,
+			{ reinterpret_cast< void* >( m_vertexBuffer->GetGPUVirtualAddress() ) } );
+	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
+
+	m_sbtHelper.AddHitGroup( L"HitGroup" ,
 		{ reinterpret_cast< void* >( m_vertexBuffer->GetGPUVirtualAddress() ) } );
+	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
+
+	m_sbtHelper.AddHitGroup( L"HitGroup" ,
+		{ reinterpret_cast< void* >( m_vertexBuffer->GetGPUVirtualAddress() ) } );
+	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
+
+	// 	// #DXR Extra - Another ray type
+	m_sbtHelper.AddHitGroup( L"PlaneHitGroup" , { heapPointer } );
+	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
 
 	// #DXR Extra - Another ray type
-//	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
 	
 	// Compute the size of the SBT given the number of shaders and their
 	// parameters
@@ -1688,6 +1753,136 @@ void RenderContextDX12::DispatchRays()
 	m_commandList->m_commandList->SetPipelineState1( m_rtStateObject.Get() );
 	// Dispatch the rays and write to the raytracing output
 	m_commandList->m_commandList->DispatchRays( &desc );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreateCameraBuffer()
+{
+//----------------------------------------------------------------------------------
+//
+// The camera buffer is a constant buffer that stores the transform matrices of
+// the camera, for use by both the rasterization and raytracing. This method
+// allocates the buffer where the matrices will be copied. For the sake of code
+// clarity, it also creates a heap containing only this buffer, to use in the
+// rasterization path.
+//
+// #DXR Extra: Perspective Camera
+	uint32_t nbMatrix = 4; // view, perspective, viewInv, perspectiveInv
+	m_cameraBufferSize = nbMatrix * sizeof( XMMATRIX );
+
+	// Create the constant buffer for all matrices
+	m_cameraBuffer = nv_helpers_dx12::CreateBuffer(
+		m_device , m_cameraBufferSize , D3D12_RESOURCE_FLAG_NONE ,
+		D3D12_RESOURCE_STATE_GENERIC_READ , nv_helpers_dx12::kUploadHeapProps );
+
+	// Create a descriptor heap that will be used by the rasterization shaders
+	m_constHeap = nv_helpers_dx12::CreateDescriptorHeap(
+		m_device , 1 , D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV , true );
+
+	// Describe and create the constant buffer view.
+	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+	cbvDesc.BufferLocation = m_cameraBuffer->GetGPUVirtualAddress();
+	cbvDesc.SizeInBytes = m_cameraBufferSize;
+
+	// Get a handle to the heap memory on the CPU side, to be able to write the
+	// descriptors directly
+	D3D12_CPU_DESCRIPTOR_HANDLE srvHandle =
+		m_constHeap->GetCPUDescriptorHandleForHeapStart();
+	m_device->CreateConstantBufferView( &cbvDesc , srvHandle );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::UpdateCameraBuffer( Camera* camera )
+{
+	std::vector<DirectX::XMMATRIX> matrices( 4 );
+
+	// Initialize the view matrix, ideally this should be based on user
+	// interactions The lookat and perspective matrices used for rasterization are
+	// defined to transform world-space vertices into a [0,1]x[0,1]x[0,1] camera
+	// space
+
+	Mat44 view = camera->GetViewMatrix();
+
+//	matrices[ 0 ].r[0] = XMVectorSet( view.Ix , view.Jx , view.Kx , view.Tx );
+//	matrices[ 0 ].r[1] = XMVectorSet( view.Iy , view.Jy , view.Ky , view.Ty );
+//	matrices[ 0 ].r[2] = XMVectorSet( view.Iz , view.Jz , view.Kz , view.Tz );
+//	matrices[ 0 ].r[3] = XMVectorSet( view.Iw , view.Jw , view.Kw , view.Tw );
+	
+	matrices[ 0 ].r[ 0 ] = XMVectorSet( view.Ix , view.Iy , view.Iz , view.Iw );
+	matrices[ 0 ].r[ 1 ] = XMVectorSet( view.Jx , view.Jy , view.Jz , view.Jw );
+	matrices[ 0 ].r[ 2 ] = XMVectorSet( view.Kx , view.Ky , view.Kz , view.Kw );
+	matrices[ 0 ].r[ 3 ] = XMVectorSet( view.Tx , view.Ty , view.Tz , view.Tw );
+
+//	float fovAngleY = 60.0f * XM_PI / 180.0f;
+//	matrices[ 1 ] =
+//		XMMatrixPerspectiveFovRH( fovAngleY , 16.f/9.f  , 0.1f , 1000.0f );
+
+	Mat44 projectionMatrix = camera->GetProjectionMatrix();
+
+	matrices[ 1 ].r[ 0 ] = XMVectorSet( projectionMatrix.Ix , projectionMatrix.Iy , projectionMatrix.Iz , projectionMatrix.Iw );
+	matrices[ 1 ].r[ 1 ] = XMVectorSet( projectionMatrix.Jx , projectionMatrix.Jy , projectionMatrix.Jz , projectionMatrix.Jw );
+	matrices[ 1 ].r[ 2 ] = XMVectorSet( projectionMatrix.Kx , projectionMatrix.Ky , projectionMatrix.Kz , projectionMatrix.Kw );
+	matrices[ 1 ].r[ 3 ] = XMVectorSet( projectionMatrix.Tx , projectionMatrix.Ty , projectionMatrix.Tz , projectionMatrix.Tw );
+
+	// Raytracing has to do the contrary of rasterization: rays are defined in
+	// camera space, and are transformed into world space. To do this, we need to
+	// store the inverse matrices as well.
+	XMVECTOR det;
+	matrices[ 2 ] = XMMatrixInverse( &det , matrices[ 0 ] );
+	matrices[ 3 ] = XMMatrixInverse( &det , matrices[ 1 ] );
+
+	// Copy the matrix contents
+	uint8_t* pData;
+	ThrowIfFailed( m_cameraBuffer->Map( 0 , nullptr , ( void** ) &pData ) );
+	memcpy( pData , matrices.data() , m_cameraBufferSize );
+	m_cameraBuffer->Unmap( 0 , nullptr );
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
+
+void RenderContextDX12::CreatePlaneVertexBuffer()
+{
+	// Define the geometry for a plane.
+	Vertex_PCU planeVertices[] = {
+		Vertex_PCU( Vec3( -1.5f, -.8f, 01.5f ) * 10.f , WHITE , Vec2::ZERO ),
+		Vertex_PCU( Vec3( -1.5f, -.8f, -1.5f ) * 10.f , WHITE , Vec2::ZERO ),
+		Vertex_PCU( Vec3( 01.5f, -.8f, 01.5f ) * 10.f , WHITE , Vec2::ZERO ),
+		Vertex_PCU( Vec3( 01.5f, -.8f, 01.5f ) * 10.f , WHITE , Vec2::ZERO ),
+		Vertex_PCU( Vec3( -1.5f, -.8f, -1.5f ) * 10.f , WHITE , Vec2::ZERO ),
+		Vertex_PCU( Vec3( 01.5f, -.8f, -1.5f ) * 10.f , WHITE , Vec2::ZERO )
+	};
+
+	const UINT planeBufferSize = sizeof( planeVertices );
+
+	// Note: using upload heaps to transfer static data like vert buffers is not
+	// recommended. Every time the GPU needs it, the upload heap will be
+	// marshalled over. Please read up on Default Heap usage. An upload heap is
+	// used here for code simplicity and because there are very few verts to
+	// actually transfer.
+	CD3DX12_HEAP_PROPERTIES heapProperty =
+		CD3DX12_HEAP_PROPERTIES( D3D12_HEAP_TYPE_UPLOAD );
+	CD3DX12_RESOURCE_DESC bufferResource =
+		CD3DX12_RESOURCE_DESC::Buffer( planeBufferSize );
+	ThrowIfFailed( m_device->CreateCommittedResource(
+		&heapProperty , D3D12_HEAP_FLAG_NONE , &bufferResource , //
+		D3D12_RESOURCE_STATE_GENERIC_READ , nullptr ,
+		IID_PPV_ARGS( &m_planeBuffer ) ) );
+
+	// Copy the triangle data to the vertex buffer.
+	UINT8* pVertexDataBegin;
+	CD3DX12_RANGE readRange(
+		0 , 0 ); // We do not intend to read from this resource on the CPU.
+	ThrowIfFailed( m_planeBuffer->Map(
+		0 , &readRange , reinterpret_cast< void** >( &pVertexDataBegin ) ) );
+	memcpy( pVertexDataBegin , planeVertices , sizeof( planeVertices ) );
+	m_planeBuffer->Unmap( 0 , nullptr );
+
+	// Initialize the vertex buffer view.
+	m_planeBufferView.BufferLocation = m_planeBuffer->GetGPUVirtualAddress();
+	m_planeBufferView.StrideInBytes = sizeof( Vertex_PCU );
+	m_planeBufferView.SizeInBytes = planeBufferSize;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------

@@ -19,6 +19,7 @@ struct MeshBuilderOptions
 	bool		generateNormals				= false;											// Required - Generate normals for the surface if they weren't in the file
 	bool		generateTangents			= false;											// Required - Generate tangents for the surface if they werent' in the file
 	bool		clean						= false;											// Extra    - Convert a vertex array to an index vertex array by removing duplicates
+	bool		ignoreUVs					= false;											// Extra    - Convert a vertex array to an index vertex array by removing duplicates
 };
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
