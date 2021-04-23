@@ -27,12 +27,17 @@ void ClosestHit(inout HitInfo payload, Attributes attrib)
       float3(1.f - attrib.bary.x - attrib.bary.y, attrib.bary.x, attrib.bary.y);
 
   uint vertId = 3 * PrimitiveIndex();
-  float3 hitColor = BTriVertex[vertId + 0].color * barycentrics.x +
-                    BTriVertex[vertId + 1].color * barycentrics.y +
-                    BTriVertex[vertId + 2].color * barycentrics.z;
+  
+  float3 vert0Color = float3( 1.f , 0.f , 0.f );
+  float3 vert1Color = float3( 0.f , 1.f , 0.f );
+  float3 vert2Color = float3( 0.f , 0.f , 1.f );
+    
+    float3 hitColor =   vert0Color * barycentrics.x +
+                        vert1Color * barycentrics.y +
+                        vert2Color * barycentrics.z;
 
-  //payload.colorAndDistance = float4(hitColor, RayTCurrent());
-  payload.colorAndDistance = float4( 0.f , 1.f , 0.f , RayTCurrent() );
+  payload.colorAndDistance = float4(hitColor, RayTCurrent());
+ // payload.colorAndDistance = float4( 0.f , 1.f , 0.f , RayTCurrent() );
 }
 
 // #DXR Extra - Another ray type
