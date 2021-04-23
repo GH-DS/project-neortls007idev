@@ -149,23 +149,19 @@ void Game::Render()
 		UpdateCameraConstantBufferData();
 		UpdateFrameTime( m_framTime );
 		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
-		//
-		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
-		g_theRenderer->DrawVertexArray( m_triangle );
+
 		g_theRenderer->CreateVertexBufferForVertexArray( m_plane );
 		g_theRenderer->DrawVertexArray( m_plane );
 		
-		//g_theRenderer->CreateVertexBufferForVertexArray( m_cubeMeshVerts );
-		//g_theRenderer->CreateIndexBufferForIndexArray( m_cubeMeshIndices );
-		//UpdateModelMatrix( m_cubeTestTransform.GetAsMatrix() );
-		//g_theRenderer->DrawIndexedVertexArray( m_cubeMeshVerts , m_cubeMeshIndices );
+		for( int index = 0 ; index < NUM_MODELS ; index++ )
+		{
+			g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts[ index ] );
+			UpdateModelMatrix( m_modelTransforms[ index ].GetAsMatrix() , m_modelTintColors[ index ] );
+			g_theRenderer->DrawVertexArray( m_modelMeshVerts[ index ] );
+		}
 	}
 	else
 	{
-
-// 		UpdateCameraConstantBufferData();
-// 		UpdateFrameTime( m_framTime );
-//		UpdateModelMatrix( Mat44::IDENTITY , WHITE );
 		g_theRenderer->ClearScreen( m_clearScreenColorRT );
 		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
 		g_theRenderer->CreatePlaneVertexBuffer();
@@ -177,7 +173,6 @@ void Game::Render()
 		g_theRenderer->CreateShaderBindingTable();
 		
 		g_theRenderer->ClearScreenRT();
-//		g_theRenderer->DrawTestPlane();
 	}
 }
 
