@@ -36,7 +36,6 @@ public:
 	std::vector<uint>					m_cubeMeshIndices;
 	
 	std::vector<Vertex_PCU>				m_modelMeshVerts;
-	std::vector<uint>					m_modelMeshIndices;
 	Transform							m_modelTestTransform;
 
 	std::vector<Vertex_PCU>				m_triangle;
