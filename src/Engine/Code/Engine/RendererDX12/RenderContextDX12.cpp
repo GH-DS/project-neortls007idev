@@ -385,6 +385,8 @@ void RenderContextDX12::CreateVertexBufferForVertexArray( std::vector<Vertex_PCU
 	m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
 	m_vertexBufferView.SizeInBytes = ( UINT ) ( verts.size() * sizeof( Vertex_PCU ) );
 	m_vertexBufferView.StrideInBytes = sizeof( Vertex_PCU );
+
+	m_numUploadHeapVertices = ( int ) verts.size();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -1288,9 +1290,11 @@ void RenderContextDX12::CreateTopLevelAS( const std::vector<std::pair<Microsoft:
 
 void RenderContextDX12::CreateAccelerationStructures()
 {
+	// Make sure you are creating the model matrix 
+	 
 	// Build the bottom AS from the Triangle vertex buffer
 	AccelerationStructureBuffers bottomLevelBuffers =
-		CreateBottomLevelAS( { {m_vertexBufferUploadHeap, 3} } );
+		CreateBottomLevelAS( { {m_vertexBufferUploadHeap, m_numUploadHeapVertices} } );
 
 	const float indentityValues[] = {
 								1.f , 0.f , 0.f , 0.f ,
@@ -1304,11 +1308,14 @@ void RenderContextDX12::CreateAccelerationStructures()
 	AccelerationStructureBuffers planeBottomLevelBuffers =
 		CreateBottomLevelAS( { {m_planeBuffer.Get(), 6} } );
 
-	m_instances = { {bottomLevelBuffers.pResult, XMMatrixIdentity()},
-					{bottomLevelBuffers.pResult, XMMatrixTranslation( .6f, 0, 0 )},
-					{bottomLevelBuffers.pResult, XMMatrixTranslation( -.6f, 0, 0 )},
+	m_instances = { {bottomLevelBuffers.pResult, XMMatrixTranslation( 2.f, 0.f , -2.f )},
+					{bottomLevelBuffers.pResult, XMMatrixTranslation( 0.f, 0.f , 2.f )},
+					{bottomLevelBuffers.pResult, XMMatrixTranslation( 2.f, 0.f , 2.f )},
+					{bottomLevelBuffers.pResult, XMMatrixTranslation( 6.f, 0.f , -6.f )},
 		// #DXR Extra: Per-Instance Data
 		{planeBottomLevelBuffers.pResult, XMMatrixTranslation( 0, 0, 0 )} };
+	
+	//m_instances.push_back( { planeBottomLevelBuffers.pResult, XMMatrixTranslation( 0, 0, 0 ) } );
 
 	// Just one instance for now
 	//m_instances = { {bottomLevelBuffers.pResult, XM_IDENTITY } };
@@ -1477,7 +1484,7 @@ void RenderContextDX12::CreateRaytracingPipeline()
 	// then requires a trace depth of 1. Note that this recursion depth should be
 	// kept to a minimum for best performance. Path tracing algorithms can be
 	// easily flattened into a simple loop in the ray generation.
-	pipeline.SetMaxRecursionDepth( 2 );
+	pipeline.SetMaxRecursionDepth( 4 );
 
 	// Compile the pipeline for execution on the GPU
 	m_rtStateObject = pipeline.Generate();
@@ -1590,18 +1597,12 @@ void RenderContextDX12::CreateShaderBindingTable()
 	// #DXR Extra - Another ray type
 	m_sbtHelper.AddMissProgram( L"ShadowMiss" , {} );
 		
-	// Adding the triangle hit shader
-	m_sbtHelper.AddHitGroup( L"HitGroup" ,
+	for( int index = 0 ; index < m_instances.size() - 1 ; index++ )
+	{
+		m_sbtHelper.AddHitGroup( L"HitGroup" ,
 			{ reinterpret_cast< void* >( m_vertexBuffer->GetGPUVirtualAddress() ) } );
-	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
-
-	m_sbtHelper.AddHitGroup( L"HitGroup" ,
-		{ reinterpret_cast< void* >( m_vertexBuffer->GetGPUVirtualAddress() ) } );
-	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
-
-	m_sbtHelper.AddHitGroup( L"HitGroup" ,
-		{ reinterpret_cast< void* >( m_vertexBuffer->GetGPUVirtualAddress() ) } );
-	m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
+		m_sbtHelper.AddHitGroup( L"ShadowHitGroup" , {} );
+	}
 
 	// 	// #DXR Extra - Another ray type
 	m_sbtHelper.AddHitGroup( L"PlaneHitGroup" , { heapPointer } );

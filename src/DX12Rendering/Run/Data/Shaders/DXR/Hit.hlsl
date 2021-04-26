@@ -28,9 +28,9 @@ void ClosestHit(inout HitInfo payload, Attributes attrib)
 
   uint vertId = 3 * PrimitiveIndex();
   
-  float3 vert0Color = float3( 1.f , 0.f , 0.f );
-  float3 vert1Color = float3( 0.f , 1.f , 0.f );
-  float3 vert2Color = float3( 0.f , 0.f , 1.f );
+  float3 vert0Color = float3( 0.77647f , 0.156862f , 0.79607f );
+  float3 vert1Color = float3( 0.77647f , 0.156862f , 0.79607f );
+  float3 vert2Color = float3( 0.77647f , 0.156862f , 0.79607f );
     
     float3 hitColor =   vert0Color * barycentrics.x +
                         vert1Color * barycentrics.y +

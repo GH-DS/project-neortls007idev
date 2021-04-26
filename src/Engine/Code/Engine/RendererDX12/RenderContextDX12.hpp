@@ -189,6 +189,7 @@ public:
 	D3D12_VERTEX_BUFFER_VIEW									m_vertexBufferView							= {};
 	ID3D12Resource*												m_vertexBuffer								= nullptr;
 	ID3D12Resource*												m_vertexBufferUploadHeap					= nullptr;
+	int															m_numUploadHeapVertices						= 0;
 	// Index buffer for the cube.
 	D3D12_INDEX_BUFFER_VIEW										m_indexBufferView							= {};
 	ID3D12Resource*												m_indexBuffer								= nullptr;

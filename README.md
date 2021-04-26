@@ -1,4 +1,4 @@
-[**Build Status of Main Branch**](https://dev.azure.com/DFS2-C29/DFSII/_build/latest?definitionId=22&branchName=main)
+[![Main Branch Build Status](https://dev.azure.com/DFS2-C29/DFSII/_apis/build/status/GH-DS.project-neortls007idev?branchName=main)](https://dev.azure.com/DFS2-C29/DFSII/_build/latest?definitionId=22&branchName=main)
 
 ----
 

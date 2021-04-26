@@ -166,7 +166,7 @@ void Game::Render()
 	else
 	{
 		g_theRenderer->ClearScreen( m_clearScreenColorRT );
-		g_theRenderer->CreateVertexBufferForVertexArray( m_triangle );
+		g_theRenderer->CreateVertexBufferForVertexArray( m_modelMeshVerts[ GM_DIAMOND ] );
 		g_theRenderer->CreatePlaneVertexBuffer();
  		g_theRenderer->CreateAccelerationStructures();
 		g_theRenderer->CreateRaytracingOutputBuffer();
